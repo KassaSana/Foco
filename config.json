@@ -1,0 +1,12 @@
+{
+  "focus_modes": {
+    "deep_work": 90,
+    "quick_focus": 25
+  },
+  "idle_timeout": 5,
+  "pseudo_productive_limit": 10,
+  "building_apps": ["code.exe", "idea64.exe", "pycharm64.exe", "cmd.exe", "powershell.exe", "terminal.exe"],
+  "studying_apps": ["canvas", "pdf", "notion", "onenote", "acrobat", "reader"],
+  "applying_sites": ["linkedin.com", "indeed.com", "glassdoor.com", "jobs.com"],
+  "pseudo_productive_sites": ["youtube.com", "reddit.com", "twitter.com", "facebook.com", "instagram.com"]
+}

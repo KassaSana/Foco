@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+eggs/
+*.egg-info/
+*.egg
+wheelhouse/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+venv.bak/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer / output
+*.exe
+*.msi
+
+# Test / coverage
+.tox/
+*.coverage
+*.coverage.*
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and runtime
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local data and app state
+productivity_data/
+productivity_data/*
+*.sqlite3
+*.db
+enforcement_state.json
+activity_overrides.json
+hosts_backup.txt
+
+# Build artifacts
+dist/
+build/
+
+# Python bytecode
+*.pyc
+
+# Optional environment files
+.env
+.env.local
+.env.*.local
+
+# node modules (if present)
+node_modules/
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/

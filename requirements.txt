@@ -1,0 +1,8 @@
+psutil>=5.8.0
+pywin32>=301
+
+# Optional for creating executables
+pyinstaller>=5.0.0
+
+# Development/testing
+pytest>=6.0.0
