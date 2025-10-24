@@ -1,4 +1,4 @@
-# Foco 🧠
+# Foco 
 **A Python desktop app for distraction-free deep work.**
 
 Foco helps users maintain focus by automatically detecting and blocking distracting apps and websites during study or work sessions.  
@@ -7,14 +7,14 @@ It classifies user activity in real time, logs productivity metrics, and visuali
 ---
 
 ## 🚀 Features
-- 🧩 **Automatic activity classification** — tracks 50+ applications using Win32 APIs  
-- 🔒 **Distraction blocker** — modifies hosts file and terminates 40+ processes (Steam, Discord, YouTube, etc.)  
-- 📊 **Focus dashboard** — Tkinter UI with real-time analytics of app usage and productivity trends  
-- 💾 **Persistent data storage** — local session logs and historical summaries  
+- **Automatic activity classification** — tracks 50+ applications using Win32 APIs  
+- **Distraction blocker** — modifies hosts file and terminates 40+ processes (Steam, Discord, YouTube, etc.)  
+- **Focus dashboard** — Tkinter UI with real-time analytics of app usage and productivity trends  
+- **Persistent data storage** — local session logs and historical summaries  
 
 ---
 
-## 🧠 Tech Stack
+##  Tech Stack
 - **Language:** Python  
 - **Libraries:** Tkinter, psutil, Win32 APIs, matplotlib  
 - **Architecture:** Event-driven system with session tracker, classifier, and analytics modules  
