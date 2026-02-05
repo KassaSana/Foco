@@ -33,6 +33,23 @@ It classifies user activity in real time, logs productivity metrics, and visuali
 
 ---
 
+## 📚 Interview Documentation
+
+Comprehensive technical documentation for understanding Foco's system design:
+
+- **[📖 TECHNICAL_CHEATSHEET.md](TECHNICAL_CHEATSHEET.md)** - Complete deep dive: architecture, design patterns, code examples, interview talking points (perfect for Citadel-level interviews)
+- **[🎨 SYSTEM_DESIGN_VISUAL.md](SYSTEM_DESIGN_VISUAL.md)** - Visual diagrams and flowcharts for whiteboarding sessions
+- **[⚡ QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - 1-page emergency cheat sheet with key metrics and 30-second pitch
+
+**Key Highlights:**
+- Event-driven architecture with Win32 API integration
+- Dual-layer distraction blocking (DNS + process termination)
+- Real-time classification with pseudo-productive time detection
+- Multi-threaded design for non-blocking UI
+- <2% CPU overhead with 1,000+ events/session tracking
+
+---
+
 ## 🔧 Setup
 ```bash
 git clone https://github.com/KassaSana/Foco.git
