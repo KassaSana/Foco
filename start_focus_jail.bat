@@ -44,23 +44,23 @@ cd /d "%~dp0"
 if "%choice%"=="1" (
     echo.
     echo  Starting 8-hour focus jail...
-    python productivity_enforcer.py
+    python -m foco.productivity_enforcer
 ) else if "%choice%"=="2" (
     echo.
     echo  📚 Starting 4-hour study session...
-    python productivity_enforcer.py
+    python -m foco.productivity_enforcer
 ) else if "%choice%"=="3" (
     echo.
     echo  ⏰ Starting 2-hour focus block...
-    python productivity_enforcer.py
+    python -m foco.productivity_enforcer
 ) else if "%choice%"=="4" (
     echo.
     echo  ⚙️ Starting custom session...
-    python productivity_enforcer.py
+    python -m foco.productivity_enforcer
 ) else if "%choice%"=="5" (
     echo.
     echo  🚨 EMERGENCY DISABLE - Removing all blocks...
-    python -c "from productivity_enforcer import ProductivityEnforcer; ProductivityEnforcer().stop_enforcement()"
+    python -c "from foco.productivity_enforcer import ProductivityEnforcer; ProductivityEnforcer().stop_enforcement()"
     echo.
     echo  All restrictions removed.
     pause

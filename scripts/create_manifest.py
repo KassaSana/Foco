@@ -2,6 +2,7 @@
 Windows Application Manifest
 Requests administrator privileges for the application
 """
+from pathlib import Path
 
 APP_MANIFEST = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
@@ -38,6 +39,7 @@ APP_MANIFEST = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 # Save manifest to file
 if __name__ == "__main__":
-    with open('app.manifest', 'w') as f:
+    manifest_path = Path(__file__).resolve().parents[1] / 'app.manifest'
+    with open(manifest_path, 'w', encoding='utf-8') as f:
         f.write(APP_MANIFEST)
-    print("Created app.manifest for administrator privileges")
+    print(f"Created {manifest_path} for administrator privileges")

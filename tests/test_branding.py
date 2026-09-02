@@ -6,9 +6,9 @@ class TestFocoBranding(unittest.TestCase):
     def test_user_facing_files_use_the_foco_name(self):
         root = Path(__file__).resolve().parents[1]
         files = [
-            'README.md', 'main.py', 'app_launcher.py', 'dashboard.py', 'install.py',
-            'setup_app.py', 'run_as_admin.bat', 'start_focus_jail.bat',
-            'create_manifest.py', 'youtube_filter.py',
+            'README.md', 'app_launcher.py', 'foco/main.py', 'foco/dashboard.py',
+            'scripts/install.py', 'scripts/setup_app.py', 'run_as_admin.bat',
+            'start_focus_jail.bat', 'scripts/create_manifest.py', 'foco/youtube_filter.py',
         ]
         legacy_names = [('AD' + 'HD'), ('Productivity ' + 'Tracker')]
         combined = '\n'.join((root / name).read_text(encoding='utf-8') for name in files)

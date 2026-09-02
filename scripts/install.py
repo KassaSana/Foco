@@ -2,7 +2,10 @@
 import subprocess
 import sys
 import os
+import importlib
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def check_python():
     """Check Python version"""
@@ -43,7 +46,7 @@ def create_desktop_shortcut():
         
         # Create a simple .bat file on desktop that calls our main bat
         batch_content = f'''@echo off
-cd /d "{Path(__file__).parent.absolute()}"
+cd /d "{PROJECT_ROOT}"
 call run_as_admin.bat
 '''
         
@@ -60,7 +63,7 @@ call run_as_admin.bat
 
 def setup_data_folder():
     """Ensure data folder exists"""
-    data_folder = Path("productivity_data")
+    data_folder = PROJECT_ROOT / "productivity_data"
     data_folder.mkdir(exist_ok=True)
     print(f"Data folder ready: {data_folder.absolute()}")
 
@@ -68,8 +71,8 @@ def test_imports():
     """Test all module imports"""
     modules = [
         'tkinter', 'psutil', 'json', 'datetime', 
-        'main', 'dashboard', 'activity_monitor', 
-        'category_engine', 'data_logger'
+        'foco.main', 'foco.dashboard', 'foco.activity_monitor',
+        'foco.category_engine', 'foco.data_logger'
     ]
     
     print("Testing module imports...")
@@ -78,11 +81,8 @@ def test_imports():
         try:
             if module == 'tkinter':
                 import tkinter
-            elif module in ['main', 'dashboard', 'activity_monitor', 'category_engine', 'data_logger']:
-                # Import our modules
-                exec(f"import {module}")
             else:
-                __import__(module)
+                importlib.import_module(module)
             print(f"{module}")
         except ImportError as e:
             print(f"{module}: {e}")
@@ -133,7 +133,7 @@ def main():
     response = input("\nLaunch Foco now? (y/n): ").lower().strip()
     if response in ['y', 'yes']:
         print("\n Starting tracker...")
-        os.system('python app_launcher.py')
+        subprocess.run([sys.executable, str(PROJECT_ROOT / 'app_launcher.py')], cwd=PROJECT_ROOT)
 
 if __name__ == "__main__":
     main()

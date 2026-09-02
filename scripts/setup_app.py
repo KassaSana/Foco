@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 # PyInstaller spec file content
 PYINSTALLER_SPEC = '''# -*- mode: python ; coding: utf-8 -*-
 
@@ -16,7 +18,6 @@ a = Analysis(
     binaries=[],
     datas=[
         ('config.json', '.'),
-        ('*.py', '.'),
     ],
     hiddenimports=['tkinter', 'tkinter.ttk', 'psutil', 'win32gui', 'win32process'],
     hookspath=[],
@@ -143,6 +144,7 @@ pause
 
 def main():
     """Main setup function"""
+    os.chdir(PROJECT_ROOT)
     print("Choose setup option:")
     print("1. Create Windows Executable (.exe)")
     print("2. Create Batch File Runner (.bat)")

@@ -4,8 +4,8 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from data_logger import DataLogger
-from focus_manager import FocusManager, FocusMode, FocusState
+from foco.data_logger import DataLogger
+from foco.focus_manager import FocusManager, FocusMode, FocusState
 
 
 class MutableClock:

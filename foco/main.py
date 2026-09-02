@@ -1,8 +1,8 @@
 """Foco desktop application entry point."""
 import tkinter as tk
-from dashboard import ProductivityDashboard
-from activity_monitor import ActivityMonitor
-from data_logger import DataLogger
+from .dashboard import ProductivityDashboard
+from .activity_monitor import ActivityMonitor
+from .data_logger import DataLogger
 import threading
 import time
 

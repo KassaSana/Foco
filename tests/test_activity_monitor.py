@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from activity_monitor import ActivityMonitor
+from foco.activity_monitor import ActivityMonitor
 
 
 class MutableClock:

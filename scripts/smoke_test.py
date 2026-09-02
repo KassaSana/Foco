@@ -2,11 +2,12 @@
 Simple test script to verify core functionality
 Run this to test the tracker without GUI
 """
-from data_logger import DataLogger
-from category_engine import CategoryEngine
-from stats_calculator import StatsCalculator
-from focus_manager import FocusManager, FocusMode
+from foco.data_logger import DataLogger
+from foco.category_engine import CategoryEngine
+from foco.stats_calculator import StatsCalculator
+from foco.focus_manager import FocusManager, FocusMode
 import time
+import tempfile
 
 def test_basic_functionality():
     print("Testing Foco components")
@@ -31,7 +32,8 @@ def test_basic_functionality():
     
     # Test DataLogger
     print("\n2. Testing DataLogger...")
-    logger = DataLogger()
+    temp_data = tempfile.TemporaryDirectory()
+    logger = DataLogger(temp_data.name)
     print(f"   Data directory: {logger.data_dir}")
     print(f"   Today's file: {logger.get_today_filename()}")
     
@@ -83,7 +85,8 @@ def test_basic_functionality():
     
     print("\nAll components working correctly")
     print("\nTo run the full GUI application:")
-    print("python main.py")
+    print("python -m foco")
+    temp_data.cleanup()
 
 if __name__ == "__main__":
     test_basic_functionality()

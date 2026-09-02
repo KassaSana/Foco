@@ -34,7 +34,27 @@ python -m pip install -r requirements.txt
 python app_launcher.py
 ```
 
-Use `run_as_admin.bat` for a launcher that requests elevation. Run `python install.py` for the guided first-time setup.
+Use `run_as_admin.bat` for a launcher that requests elevation. Run `python -m scripts.install` for the guided first-time setup. Foco can also be started without elevation using `python -m foco`.
+
+## Project layout
+
+```text
+foco/                  Application package
+  main.py              Desktop composition root
+  dashboard.py         Tkinter interface
+  activity_monitor.py  Foreground and idle tracking
+  category_engine.py   Activity classification
+  data_logger.py       Local persistence
+  focus_manager.py     Focus-session lifecycle
+  productivity_enforcer.py
+                         Domain and process blocking
+  stats_calculator.py  Historical metrics
+  trend_analyzer.py    Period comparisons
+scripts/               Installation, packaging, and smoke-test utilities
+tests/                 Automated unit tests
+app_launcher.py        Elevated Windows entry point
+config.json            User-editable defaults
+```
 
 ## Using the application
 
@@ -69,4 +89,4 @@ The tests use temporary hosts and data files; they do not modify the system host
 
 ## Packaging
 
-Run `python setup_app.py` and choose the executable option to build `dist/Foco.exe` with PyInstaller.
+Run `python -m scripts.setup_app` and choose the executable option to build `dist/Foco.exe` with PyInstaller.

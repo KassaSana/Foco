@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from productivity_enforcer import ProductivityEnforcer
+from foco.productivity_enforcer import ProductivityEnforcer
 
 
 class TestProductivityEnforcer(unittest.TestCase):

@@ -5,7 +5,7 @@ Tracks active windows, applications, and detects idle time
 import psutil
 import ctypes
 from datetime import datetime, timedelta
-from category_engine import CategoryEngine
+from .category_engine import CategoryEngine
 
 try:
     import win32gui

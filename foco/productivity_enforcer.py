@@ -10,7 +10,7 @@ import ctypes
 from ctypes import wintypes
 import time
 import threading
-from config_manager import load_config
+from .config_manager import load_config
 
 class ProductivityEnforcer:
     BLOCK_START = "# FOCO PRODUCTIVITY BLOCKER START"

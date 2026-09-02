@@ -5,10 +5,10 @@ Focus | Activities | Statistics
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
-from stats_calculator import StatsCalculator
-from trend_analyzer import TrendAnalyzer
-from focus_manager import FocusManager, FocusMode
-from config_manager import load_config, save_config
+from .stats_calculator import StatsCalculator
+from .trend_analyzer import TrendAnalyzer
+from .focus_manager import FocusManager, FocusMode
+from .config_manager import load_config, save_config
 
 class ProductivityDashboard:
     def __init__(self, root, data_logger, activity_monitor):
@@ -133,7 +133,7 @@ class ProductivityDashboard:
 
     def _start_manual_jail(self, hours):
         try:
-            from productivity_enforcer import ProductivityEnforcer
+            from .productivity_enforcer import ProductivityEnforcer
             import tkinter.messagebox as m
             if not m.askyesno("Start Jail", f"Start {hours}h distraction block?"):
                 return
@@ -149,7 +149,7 @@ class ProductivityDashboard:
     def _recover_jail(self):
         """Resume monitoring a saved jail or remove an expired stale block."""
         try:
-            from productivity_enforcer import ProductivityEnforcer
+            from .productivity_enforcer import ProductivityEnforcer
             self.manual_jail = ProductivityEnforcer()
             end_time = self.manual_jail.recover_enforcement()
             if end_time:
@@ -162,7 +162,7 @@ class ProductivityDashboard:
 
     def _disable_all_jail(self):
         try:
-            from productivity_enforcer import ProductivityEnforcer
+            from .productivity_enforcer import ProductivityEnforcer
             import tkinter.messagebox as m
             if not m.askyesno("Disable", "Disable all blocking?"):
                 return

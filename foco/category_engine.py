@@ -2,7 +2,7 @@
 Category Engine - Smart activity categorization logic
 Categorizes activities and detects pseudo-productive time
 """
-from config_manager import load_config
+from .config_manager import load_config
 
 class CategoryEngine:
     def __init__(self, config_path="config.json"):
