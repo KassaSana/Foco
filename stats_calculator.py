@@ -11,13 +11,70 @@ class StatsCalculator:
     
     def calculate_daily_stats(self, date_str=None):
         """Calculate stats for a specific day"""
-        if date_str is None:
-            return self.data_logger.get_today_summary()
-        
-        # Load specific date data
-        filename = f"{date_str}.json"
-        # Implementation would load from file
-        return self.data_logger.get_today_summary()  # Simplified for now
+        day_data = self.data_logger.get_day_data(date_str)
+        result = day_data['daily_summary'].copy()
+        result['metrics'] = self.calculate_productivity_metrics([day_data])
+        return result
+
+    def calculate_productivity_metrics(self, day_records):
+        """Calculate behavior and focus metrics for any collection of days."""
+        productive_minutes = 0
+        pseudo_minutes = 0
+        productive_blocks = []
+        focus_sessions = []
+        context_switches = 0
+
+        for day in day_records:
+            summary = day.get('daily_summary', {})
+            productive_minutes += float(summary.get('total_productive', 0) or 0)
+            pseudo_minutes += float(summary.get('pseudo_productive', 0) or 0)
+            context_switches += int(summary.get('context_switches', 0) or 0)
+            focus_sessions.extend(day.get('focus_sessions', []))
+            for session in day.get('sessions', []):
+                if not session.get('is_pseudo_productive', False):
+                    try:
+                        duration = float(session.get('duration_minutes', 0) or 0)
+                    except (TypeError, ValueError):
+                        duration = 0
+                    if duration > 0:
+                        productive_blocks.append(duration)
+
+        measured_minutes = productive_minutes + pseudo_minutes
+        completed_focus = sum(
+            float(session.get('completion_percentage', 0) or 0) >= 100
+            for session in focus_sessions
+        )
+        focus_minutes = sum(float(session.get('active_minutes', 0) or 0)
+                            for session in focus_sessions)
+        return {
+            'productive_minutes': round(productive_minutes, 1),
+            'pseudo_minutes': round(pseudo_minutes, 1),
+            'pseudo_ratio': round((pseudo_minutes / measured_minutes) * 100, 1)
+                            if measured_minutes else 0,
+            'average_work_block': round(sum(productive_blocks) / len(productive_blocks), 1)
+                                  if productive_blocks else 0,
+            'longest_work_block': round(max(productive_blocks), 1) if productive_blocks else 0,
+            'context_switches': context_switches,
+            'focus_minutes': round(focus_minutes, 1),
+            'focus_sessions': len(focus_sessions),
+            'focus_completion_rate': round((completed_focus / len(focus_sessions)) * 100, 1)
+                                     if focus_sessions else 0,
+        }
+
+    def build_insights(self, metrics):
+        """Create concise, actionable interpretations of the current metrics."""
+        insights = []
+        if metrics['pseudo_ratio'] >= 30:
+            insights.append(f"Pseudo-productive time is {metrics['pseudo_ratio']:.0f}% of measured work.")
+        elif metrics['productive_minutes'] > 0:
+            insights.append(f"Pseudo-productive time is contained at {metrics['pseudo_ratio']:.0f}%.")
+        if metrics['focus_sessions']:
+            insights.append(
+                f"{metrics['focus_completion_rate']:.0f}% of focus sessions reached their target."
+            )
+        if metrics['longest_work_block']:
+            insights.append(f"Longest uninterrupted work block: {metrics['longest_work_block']:.0f} min.")
+        return insights[:3] or ["Track a work session to establish a baseline."]
     
     def calculate_weekly_stats(self, start_date=None):
         """Calculate stats for a week"""
@@ -63,7 +120,8 @@ class StatsCalculator:
             'best_day': best_day,
             'average_daily': round(avg_daily / 60, 1),  # Convert to hours
             'top_category': top_category.title(),
-            'consistency': self.calculate_consistency(daily_summaries)
+            'consistency': self.calculate_consistency(daily_summaries),
+            'metrics': self.calculate_productivity_metrics(weekly_data),
         }
     
     def calculate_monthly_stats(self, year=None, month=None):
@@ -112,7 +170,8 @@ class StatsCalculator:
             'weekly_summaries': weekly_summaries,
             'best_week': round(best_week / 60, 1),  # Convert to hours
             'top_category': top_category.title(),
-            'days_with_work': len([d for d in monthly_data if d['daily_summary']['total_productive'] > 120])  # >2h
+            'days_with_work': len([d for d in monthly_data if d['daily_summary']['total_productive'] > 120]),
+            'metrics': self.calculate_productivity_metrics(monthly_data),
         }
     
     def calculate_yearly_stats(self, year=None):
@@ -131,10 +190,12 @@ class StatsCalculator:
         
         quarterly_summaries = [0, 0, 0, 0]  # Q1, Q2, Q3, Q4
         monthly_totals = []
+        yearly_data = []
         
         for month in range(1, 13):
             try:
                 monthly_data = self.data_logger.get_monthly_data(year, month)
+                yearly_data.extend(monthly_data)
                 month_total = sum(day['daily_summary']['total_productive'] for day in monthly_data)
                 monthly_totals.append(month_total)
                 
@@ -159,7 +220,8 @@ class StatsCalculator:
             'quarterly_summaries': [round(q / 60, 1) for q in quarterly_summaries],
             'monthly_totals': [round(m / 60, 1) for m in monthly_totals],
             'best_month': round(best_month / 60, 1),
-            'best_quarter': round(best_quarter / 60, 1)
+            'best_quarter': round(best_quarter / 60, 1),
+            'metrics': self.calculate_productivity_metrics(yearly_data),
         }
     
     def calculate_consistency(self, daily_summaries):

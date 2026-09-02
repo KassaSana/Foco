@@ -193,6 +193,14 @@ class DataLogger:
             self._rollover_if_needed()
             return self.today_data["daily_summary"].copy()
 
+    def get_day_data(self, date_string=None):
+        """Return an isolated day snapshot for analytics."""
+        with self._lock:
+            self._rollover_if_needed()
+            if date_string is None or date_string == self.current_date:
+                return json.loads(json.dumps(self.today_data))
+            return self._load_date(date_string)
+
     def get_current_session_info(self):
         with self._lock:
             return self.current_session.copy() if self.current_session else None

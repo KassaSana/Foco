@@ -294,7 +294,7 @@ class ProductivityDashboard:
         view = self.range_var.get()
         try:
             if view == 'Today':
-                stats = self.data_logger.get_today_summary()
+                stats = self.stats_calculator.calculate_daily_stats()
                 self._render_daily_stats(stats)
             elif view == 'This Week':
                 monday = datetime.now() - timedelta(days=datetime.now().weekday())
@@ -324,12 +324,20 @@ class ProductivityDashboard:
         ]
         for label, minutes, color in rows:
             self._category_row(label, minutes, stats.get('total_productive',1), color)
+        self._render_metrics(stats['metrics'])
 
     def _render_weekly_stats(self, stats):
         ttk.Label(self.stats_container, text=f"Week Total: {stats['totals']['total_productive']/60:.1f}h", font=("Segoe UI",11,'bold')).pack(anchor='w')
         max_hours = max((d['total'] for d in stats['daily_summaries']), default=1)/60
         for name, day in zip(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], stats['daily_summaries']):
             self._day_bar(name, day['total']/60, max_hours)
+        trends = self.trend_analyzer.analyze_weekly_trends(2)
+        if 'growth_percentage' in trends:
+            ttk.Label(
+                self.stats_container,
+                text=f"Week-over-week: {trends['growth_percentage']:+.1f}% ({trends['trend_direction']})"
+            ).pack(anchor='w', pady=(8, 0))
+        self._render_metrics(stats['metrics'])
 
     def _render_monthly_stats(self, stats):
         ttk.Label(self.stats_container, text=f"Month Total: {stats['totals']['total_productive']/60:.1f}h", font=("Segoe UI",11,'bold')).pack(anchor='w')
@@ -342,12 +350,32 @@ class ProductivityDashboard:
         total = stats['totals']['total_productive'] or 1
         for label, minutes, color in rows:
             self._category_row(label, minutes, total, color)
+        self._render_metrics(stats['metrics'])
 
     def _render_yearly_stats(self, stats):
         ttk.Label(self.stats_container, text=f"Year Total: {stats['totals']['total_productive']/60:.0f}h", font=("Segoe UI",11,'bold')).pack(anchor='w')
         max_h = max(stats['quarterly_summaries'], default=1)
         for q_label, hours in zip(['Q1','Q2','Q3','Q4'], stats['quarterly_summaries']):
             self._quarter_bar(q_label, hours, max_h)
+        self._render_metrics(stats['metrics'])
+
+    def _render_metrics(self, metrics):
+        panel = ttk.LabelFrame(self.stats_container, text="Focus quality")
+        panel.pack(fill='x', pady=(12, 4))
+        line = (
+            f"Pseudo ratio: {metrics['pseudo_ratio']:.0f}%   |   "
+            f"Focus completion: {metrics['focus_completion_rate']:.0f}%   |   "
+            f"Focused: {metrics['focus_minutes']/60:.1f}h"
+        )
+        ttk.Label(panel, text=line, font=("Segoe UI", 10, 'bold')).pack(anchor='w', padx=8, pady=(6, 2))
+        ttk.Label(
+            panel,
+            text=(f"Average work block: {metrics['average_work_block']:.0f}m   |   "
+                  f"Longest: {metrics['longest_work_block']:.0f}m")
+        ).pack(anchor='w', padx=8, pady=(0, 4))
+        for insight in self.stats_calculator.build_insights(metrics):
+            ttk.Label(panel, text=f"• {insight}").pack(anchor='w', padx=8)
+        ttk.Frame(panel, height=4).pack()
 
     # --- Visual helpers ---
     def _category_row(self, label, minutes, total_minutes, color):
