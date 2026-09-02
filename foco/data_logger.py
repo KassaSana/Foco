@@ -165,10 +165,6 @@ class DataLogger:
             self._recalculate_activity_summary()
             self.save_today_data()
 
-    def save_activity_overrides(self, rows):
-        """Backward-compatible alias for canonical activity replacement."""
-        self.replace_activities(rows)
-
     def log_focus_session(self, session_data):
         with self._lock:
             self._rollover_if_needed()
@@ -201,10 +197,6 @@ class DataLogger:
                 return json.loads(json.dumps(self.today_data))
             return self._load_date(date_string)
 
-    def get_current_session_info(self):
-        with self._lock:
-            return self.current_session.copy() if self.current_session else None
-
     def get_weekly_data(self, start_date=None):
         if start_date is None:
             today = self.now_provider()
@@ -221,13 +213,6 @@ class DataLogger:
         days = (next_month - first_day).days
         return [self._load_date((first_day + timedelta(days=i)).strftime('%Y-%m-%d'))
                 for i in range(days)]
-
-    def get_available_dates(self):
-        dates = []
-        for filename in os.listdir(self.data_dir):
-            if filename.endswith('.json') and len(filename) == 15:
-                dates.append(filename[:-5])
-        return sorted(dates)
 
     def get_recent_activities(self, limit=50):
         with self._lock:

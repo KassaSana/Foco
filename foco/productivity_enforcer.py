@@ -1,13 +1,10 @@
 """Foco website and application blocking service."""
 import os
-import sys
 import subprocess
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-import winreg
 import ctypes
-from ctypes import wintypes
 import time
 import threading
 from .config_manager import load_config
@@ -25,7 +22,6 @@ class ProductivityEnforcer:
         self.state_file = self.data_dir / "enforcement_state.json"
         self.flush_dns = flush_dns
         self.config_path = config_path
-        self.blocked_processes = []
         self.enforcement_active = False
         self._monitor_thread = None
         
@@ -37,89 +33,6 @@ class ProductivityEnforcer:
     
     def load_block_config(self):
         """Load blocking configuration"""
-        self.blocked_sites = [
-            # Social Media
-            "facebook.com", "www.facebook.com", "m.facebook.com",
-            "twitter.com", "www.twitter.com", "x.com", "www.x.com",
-            "instagram.com", "www.instagram.com",
-            "tiktok.com", "www.tiktok.com",
-            "snapchat.com", "www.snapchat.com",
-            "discord.com", "www.discord.com",
-            
-            # Entertainment/Distractions
-            "reddit.com", "www.reddit.com", "old.reddit.com", "new.reddit.com",
-            "9gag.com", "www.9gag.com",
-            "buzzfeed.com", "www.buzzfeed.com",
-            "imgur.com", "www.imgur.com",
-            
-            # Most of YouTube (with exceptions)
-            "youtube.com", "www.youtube.com", "m.youtube.com",
-            
-            # Gaming
-            "steam.com", "store.steampowered.com",
-            "twitch.tv", "www.twitch.tv",
-            "epic games.com", "www.epicgames.com",
-            
-            # News/Time wasters
-            "cnn.com", "www.cnn.com",
-            "bbc.com", "www.bbc.com",
-            "news.ycombinator.com",
-            
-            # Shopping
-            "amazon.com", "www.amazon.com", "shopping.amazon.com",
-            "ebay.com", "www.ebay.com",
-            "aliexpress.com", "www.aliexpress.com"
-        ]
-        
-        # YouTube channels/creators that ARE allowed (educational)
-        self.allowed_youtube = [
-            "neetcode", "neetcodeio",
-            "mit", "stanford", "harvard", "berkeley",
-            "freecodecamp", "codecademy", "coursera",
-            "khan academy", "khanacademy",
-            "programming with mosh", "traversy media",
-            "tech with tim", "corey schafer",
-            "sentdex", "derek banas",
-            "cs50", "computerphile", "numberphile",
-            "3blue1brown", "ben eater",
-            "computerscience", "algorithms",
-            "lectures", "tutorial", "course",
-            "learn", "education", "university"
-        ]
-        
-        # Applications to block
-        self.blocked_apps = [
-            # Gaming
-            "steam.exe", "steamwebhelper.exe",
-            "epicgameslauncher.exe", "epicgames.exe",
-            "origin.exe", "originwebhelperservice.exe",
-            "battlenet.exe", "battle.net.exe",
-            "riotclientservices.exe", "valorant.exe", "leagueoflegends.exe",
-            "minecraft.exe", "minecraftlauncher.exe",
-            
-            # Entertainment
-            "spotify.exe", "spotifywebhelper.exe",
-            "netflix.exe", "hulu.exe", "disney+.exe",
-            "vlc.exe", "mediaplayer.exe",
-            
-            # Social Media Desktop Apps
-            "discord.exe", "slack.exe", "teams.exe",
-            "whatsapp.exe", "telegram.exe",
-            
-            # Other Distractions
-            "torrent.exe", "utorrent.exe", "bittorrent.exe"
-        ]
-        
-        # Always allowed applications (work tools)
-        self.allowed_apps = [
-            "code.exe", "devenv.exe", "idea64.exe", "pycharm64.exe",
-            "cmd.exe", "powershell.exe", "terminal.exe",
-            "git.exe", "node.exe", "python.exe", "java.exe",
-            "notepad.exe", "notepad++.exe",
-            "chrome.exe", "firefox.exe", "edge.exe",  # Browsers (with site filtering)
-            "explorer.exe", "taskmgr.exe"
-        ]
-
         config = load_config(self.config_path)
         self.blocked_sites = config['blocked_sites']
         self.blocked_apps = config['blocked_apps']
@@ -210,32 +123,6 @@ class ProductivityEnforcer:
             print("Make sure you're running as administrator!")
             return False
     
-    def check_youtube_content(self, title):
-        """Check if YouTube content is educational/allowed"""
-        if not title:
-            return False
-        
-        title_lower = title.lower()
-        
-        # Check for allowed creators/channels
-        for allowed in self.allowed_youtube:
-            if allowed.lower() in title_lower:
-                return True
-        
-        # Block common entertainment keywords
-        blocked_keywords = [
-            "funny", "meme", "react", "reaction", "prank", "fail",
-            "tiktok", "shorts", "vlog", "lifestyle", "drama",
-            "gaming", "gameplay", "stream", "highlights",
-            "music video", "song", "album", "concert"
-        ]
-        
-        for blocked in blocked_keywords:
-            if blocked in title_lower:
-                return False
-        
-        return False  # Block by default unless explicitly allowed
-    
     def monitor_processes(self):
         """Monitor and kill blocked processes"""
         try:
@@ -254,53 +141,6 @@ class ProductivityEnforcer:
                     
         except ImportError:
             print("psutil is not available for process monitoring")
-    
-    def check_browser_content(self):
-        """Monitor browser windows for blocked content"""
-        try:
-            import win32gui
-            
-            def enum_windows_callback(hwnd, windows):
-                if win32gui.IsWindowVisible(hwnd):
-                    window_text = win32gui.GetWindowText(hwnd)
-                    if window_text:
-                        windows.append(window_text)
-            
-            windows = []
-            win32gui.EnumWindows(enum_windows_callback, windows)
-            
-            for window_title in windows:
-                title_lower = window_title.lower()
-                
-                # Check for blocked sites in browser titles
-                for site in self.blocked_sites:
-                    if site in title_lower:
-                        # Special handling for YouTube
-                        if "youtube" in title_lower:
-                            if not self.check_youtube_content(window_title):
-                                print(f"Blocked YouTube content: {window_title[:50]}...")
-                                self.show_block_message("YouTube content blocked", 
-                                                       "Only educational content allowed!")
-                        else:
-                            print(f"Blocked site detected: {site}")
-                            self.show_block_message("Website blocked", f"{site} is not allowed during work time")
-                            
-        except ImportError:
-            print("win32gui is not available for browser monitoring")
-    
-    def show_block_message(self, title, message):
-        """Show blocking notification"""
-        try:
-            import tkinter as tk
-            from tkinter import messagebox
-            
-            root = tk.Tk()
-            root.withdraw()  # Hide main window
-            messagebox.showwarning(title, f"{message}\n\nReturn to the work you committed to.")
-            root.destroy()
-            
-        except Exception:
-            print(f"{title}: {message}")
     
     def start_enforcement(self, duration_hours=8):
         """Start productivity enforcement"""
@@ -409,9 +249,8 @@ class ProductivityEnforcer:
                     self.stop_enforcement()
                     break
                 
-                # Monitor processes and browser content
+                # Domains remain blocked by the hosts file; enforce app rules here.
                 self.monitor_processes()
-                self.check_browser_content()
                 
                 time.sleep(5)  # Check every 5 seconds
                 

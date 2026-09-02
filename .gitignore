@@ -1,87 +1,43 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
-build/
-dist/
-eggs/
 *.egg-info/
-*.egg
-wheelhouse/
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Virtual environments
+# Environments and local configuration
+.venv/
 venv/
 env/
-ENV/
-.venv/
-venv.bak/
+.env*
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer / output
+# Build and test output
+build/
+dist/
 *.exe
 *.msi
-
-# Test / coverage
+*.manifest
+*.spec
 .tox/
-*.coverage
-*.coverage.*
-htmlcov/
 .pytest_cache/
+.coverage*
 coverage.xml
+htmlcov/
 
-# IDEs and editors
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs and runtime
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local data and app state
+# Foco runtime data
 productivity_data/
-productivity_data/*
 *.sqlite3
 *.db
 enforcement_state.json
 activity_overrides.json
 hosts_backup.txt
 
-# Build artifacts
-dist/
-build/
+# Editors and operating systems
+.idea/
+.vscode/
+*.sublime-*
+.DS_Store
+Thumbs.db
 
-# Python bytecode
-*.pyc
-
-# Optional environment files
-.env
-.env.local
-.env.*.local
-
-# node modules (if present)
+# Logs and unrelated dependency folders
+*.log
 node_modules/
-
-# Coverage reports
-.coverage
-coverage.xml
-htmlcov/

@@ -73,10 +73,6 @@ class ActivityMonitor:
         except (AttributeError, OSError):
             return 0
     
-    def is_idle(self):
-        """Check whether actual keyboard/mouse inactivity passed the threshold."""
-        return self.idle_seconds_provider() >= self.idle_threshold
-    
     def update(self):
         """Main update loop - called every second"""
         current_time = self.now_provider()

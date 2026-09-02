@@ -2,8 +2,7 @@
 Stats Calculator - Historical summaries and analytics
 Generates daily/weekly/monthly/yearly summaries and insights
 """
-from datetime import datetime, timedelta
-from collections import defaultdict
+from datetime import datetime
 
 class StatsCalculator:
     def __init__(self, data_logger):
@@ -231,19 +230,3 @@ class StatsCalculator:
         
         days_with_work = len([day for day in daily_summaries if day['total'] > 120])  # >2h
         return round(days_with_work / len(daily_summaries), 2)
-    
-    def format_time_display(self, minutes):
-        """Format minutes into readable time display"""
-        if minutes < 60:
-            return f"{int(minutes)}m"
-        else:
-            hours = minutes / 60
-            return f"{hours:.1f}h"
-    
-    def get_progress_bar(self, value, max_value, width=10):
-        """Generate ASCII progress bar"""
-        if max_value == 0:
-            return "░" * width
-        
-        filled = int((value / max_value) * width)
-        return "█" * filled + "░" * (width - filled)

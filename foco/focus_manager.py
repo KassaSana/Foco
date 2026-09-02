@@ -54,7 +54,6 @@ class FocusManager:
             'start_time': self.start_time.strftime('%H:%M:%S'),
             'duration_minutes': self.durations[mode],
             'jail_active': False,
-            'activities': []
         }
         
         # Automatically enable jail mode for Deep Work sessions
@@ -169,10 +168,6 @@ class FocusManager:
         
         return min(100, (elapsed_minutes / target_minutes) * 100)
     
-    def is_session_complete(self):
-        """Check if current session is complete"""
-        return self.get_remaining_time() <= 0 and self.state == FocusState.RUNNING
-    
     def get_session_info(self):
         """Get information about current session"""
         if self.state == FocusState.INACTIVE:
@@ -193,20 +188,6 @@ class FocusManager:
             self.data_logger.log_focus_session(self.session_data)
             print(f"Focus session completed: {self.session_data['mode']} - "
                   f"{self.session_data.get('active_minutes', 0):.1f}m active")
-    
-    def get_daily_focus_stats(self):
-        """Get today's focus session statistics"""
-        sessions = self.data_logger.get_focus_sessions()
-        completed = [s for s in sessions if s.get('completion_percentage', 0) >= 100]
-        completion_values = [s.get('completion_percentage', 0) for s in sessions]
-        return {
-            'sessions_completed': len(completed),
-            'total_focus_time': round(sum(s.get('active_minutes', 0) for s in sessions), 1),
-            'deep_work_sessions': sum(s.get('mode') == FocusMode.DEEP_WORK.value for s in sessions),
-            'quick_focus_sessions': sum(s.get('mode') == FocusMode.QUICK_FOCUS.value for s in sessions),
-            'average_completion': round(sum(completion_values) / len(completion_values), 1)
-                                  if completion_values else 0,
-        }
     
     def _start_jail_mode(self):
         """Start productivity jail mode"""

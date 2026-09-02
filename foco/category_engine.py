@@ -10,17 +10,13 @@ class CategoryEngine:
         self.reload_config()
 
     def reload_config(self):
-        self.config = self.load_config()
+        self.config = load_config(self.config_path)
         # App patterns for categorization
         self.building_apps = self.config.get('building_apps', [])
         self.studying_apps = self.config.get('studying_apps', [])
         self.applying_sites = self.config.get('applying_sites', [])
         self.pseudo_productive_sites = self.config.get('pseudo_productive_sites', [])
         return self.config
-    
-    def load_config(self):
-        """Load configuration from config.json"""
-        return load_config(self.config_path)
     
     def categorize_activity(self, app_name, window_title):
         """Categorize an activity into Building/Studying/Applying/Knowledge"""
@@ -109,13 +105,3 @@ class CategoryEngine:
             return True
         
         return False
-    
-    def get_category_color(self, category):
-        """Get color coding for categories"""
-        colors = {
-            'Building': '#4CAF50',      # Green
-            'Studying': '#2196F3',      # Blue  
-            'Applying': '#FF9800',      # Orange
-            'Knowledge': '#9C27B0'      # Purple
-        }
-        return colors.get(category, '#757575')  # Default gray

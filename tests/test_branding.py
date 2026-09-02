@@ -7,8 +7,7 @@ class TestFocoBranding(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         files = [
             'README.md', 'app_launcher.py', 'foco/main.py', 'foco/dashboard.py',
-            'scripts/install.py', 'scripts/setup_app.py', 'run_as_admin.bat',
-            'start_focus_jail.bat', 'scripts/create_manifest.py', 'foco/youtube_filter.py',
+            'scripts/setup_app.py', 'foco/productivity_enforcer.py',
         ]
         legacy_names = [('AD' + 'HD'), ('Productivity ' + 'Tracker')]
         combined = '\n'.join((root / name).read_text(encoding='utf-8') for name in files)

@@ -34,7 +34,7 @@ python -m pip install -r requirements.txt
 python app_launcher.py
 ```
 
-Use `run_as_admin.bat` for a launcher that requests elevation. Run `python -m scripts.install` for the guided first-time setup. Foco can also be started without elevation using `python -m foco`.
+`app_launcher.py` requests elevation automatically. Foco can also be started without elevation using `python -m foco`.
 
 ## Project layout
 
@@ -49,8 +49,7 @@ foco/                  Application package
   productivity_enforcer.py
                          Domain and process blocking
   stats_calculator.py  Historical metrics
-  trend_analyzer.py    Period comparisons
-scripts/               Installation, packaging, and smoke-test utilities
+scripts/               Executable packaging utility
 tests/                 Automated unit tests
 app_launcher.py        Elevated Windows entry point
 config.json            User-editable defaults
@@ -89,4 +88,4 @@ The tests use temporary hosts and data files; they do not modify the system host
 
 ## Packaging
 
-Run `python -m scripts.setup_app` and choose the executable option to build `dist/Foco.exe` with PyInstaller.
+Run `python -m scripts.setup_app` to build `dist/Foco.exe` with PyInstaller.

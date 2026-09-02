@@ -6,7 +6,6 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
 from .stats_calculator import StatsCalculator
-from .trend_analyzer import TrendAnalyzer
 from .focus_manager import FocusManager, FocusMode
 from .config_manager import load_config, save_config
 
@@ -16,14 +15,10 @@ class ProductivityDashboard:
         self.data_logger = data_logger
         self.activity_monitor = activity_monitor
         self.stats_calculator = StatsCalculator(data_logger)
-        self.trend_analyzer = TrendAnalyzer(self.stats_calculator)
         self.focus_manager = FocusManager(data_logger)
 
         # State
-        self.current_view = "Today"  # For statistics range selection
-        self.view_date = datetime.now()
         self._manual_jail_active = False
-        self.cached_stats = {}
         self.last_activity_text = ""
 
         self._build_ui()
@@ -219,13 +214,12 @@ class ProductivityDashboard:
                 'start_time': vals[0], 'end_time': vals[1], 'label': vals[2],
                 'category': vals[3], 'duration_minutes': vals[4]
             })
-        if hasattr(self.data_logger, 'save_activity_overrides'):
-            try:
-                self.data_logger.save_activity_overrides(rows)
-                self._refresh_activities()
-            except Exception as e:
-                import tkinter.messagebox as m
-                m.showerror("Save Failed", str(e))
+        try:
+            self.data_logger.replace_activities(rows)
+            self._refresh_activities()
+        except Exception as e:
+            import tkinter.messagebox as m
+            m.showerror("Save Failed", str(e))
 
     def _edit_cell(self, event):
         region = self.activities_tree.identify('region', event.x, event.y)
@@ -335,11 +329,16 @@ class ProductivityDashboard:
         max_hours = max((d['total'] for d in stats['daily_summaries']), default=1)/60
         for name, day in zip(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], stats['daily_summaries']):
             self._day_bar(name, day['total']/60, max_hours)
-        trends = self.trend_analyzer.analyze_weekly_trends(2)
-        if 'growth_percentage' in trends:
+        monday = datetime.now() - timedelta(days=datetime.now().weekday())
+        previous = self.stats_calculator.calculate_weekly_stats(monday - timedelta(days=7))
+        current_minutes = stats['totals']['total_productive']
+        previous_minutes = previous['totals']['total_productive']
+        if previous_minutes:
+            growth = ((current_minutes - previous_minutes) / previous_minutes) * 100
+            direction = 'up' if growth > 0 else 'down' if growth < 0 else 'stable'
             ttk.Label(
                 self.stats_container,
-                text=f"Week-over-week: {trends['growth_percentage']:+.1f}% ({trends['trend_direction']})"
+                text=f"Week-over-week: {growth:+.1f}% ({direction})"
             ).pack(anchor='w', pady=(8, 0))
         self._render_metrics(stats['metrics'])
 
@@ -543,9 +542,5 @@ class ProductivityDashboard:
         # Refresh activities tree occasionally
         if self.notebook.index(self.notebook.select()) == 1:  # Activities tab visible
             self._refresh_activities()
-
-    # Public alias for external triggers if needed
-    def refresh_now(self):
-        self._update_stats()
 
 # End of refactored dashboard

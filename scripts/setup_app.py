@@ -3,6 +3,7 @@
 
 import os
 import sys
+import subprocess
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -68,7 +69,7 @@ def create_app():
         print("PyInstaller found")
     except ImportError:
         print("PyInstaller not found. Installing...")
-        os.system("pip install pyinstaller")
+        subprocess.run([sys.executable, '-m', 'pip', 'install', 'pyinstaller'], check=True)
         print("PyInstaller installed")
     
     # Write spec file
@@ -78,11 +79,14 @@ def create_app():
     
     # Build the executable
     print("Building executable... (this may take a few minutes)")
-    result = os.system("pyinstaller tracker_app.spec --clean")
+    result = subprocess.run(
+        [sys.executable, '-m', 'PyInstaller', 'tracker_app.spec', '--clean'],
+        check=False,
+    ).returncode
     
     if result == 0:
         print("Executable created successfully")
-        print("\n📁 Your app is located at:")
+        print("\nYour app is located at:")
         print("   dist/Foco.exe")
         
         # Check if executable exists
@@ -124,46 +128,10 @@ def create_shortcut_option(exe_path):
         except Exception as e:
             print(f"Error creating shortcut: {e}")
 
-def create_batch_runner():
-    """Create a simple batch file to run the app"""
-    batch_content = '''@echo off
-title Foco
-echo Starting Foco...
-echo.
-
-cd /d "%~dp0"
-python app_launcher.py
-
-pause
-'''
-    
-    with open('run_tracker.bat', 'w') as f:
-        f.write(batch_content)
-    
-    print("Created run_tracker.bat for easy launching")
-
 def main():
     """Main setup function"""
     os.chdir(PROJECT_ROOT)
-    print("Choose setup option:")
-    print("1. Create Windows Executable (.exe)")
-    print("2. Create Batch File Runner (.bat)")
-    print("3. Both")
-    
-    choice = input("\nEnter choice (1-3): ").strip()
-    
-    if choice in ['1', '3']:
-        create_app()
-    
-    if choice in ['2', '3']:
-        create_batch_runner()
-    
-    print("\nSetup complete")
-    print("\nUsage Instructions:")
-    print("1. Run the executable with admin privileges for best window detection")
-    print("2. The app will automatically track your productivity")
-    print("3. Use focus timers for deep work sessions")
-    print("4. All data stays local on your machine")
+    create_app()
 
 if __name__ == "__main__":
     main()
