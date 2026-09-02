@@ -62,6 +62,12 @@ class DataLogger:
         """Start a new tracking session"""
         self.current_session = session_data.copy()
         self.today_data["daily_summary"]["context_switches"] += 1
+
+    def cancel_current_session(self):
+        """Discard a short/noisy segment without leaving stale in-memory state."""
+        summary = self.today_data["daily_summary"]
+        summary["context_switches"] = max(0, summary["context_switches"] - 1)
+        self.current_session = None
     
     def end_session(self, session_data):
         """End current session and log the data"""

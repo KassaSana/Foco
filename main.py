@@ -37,6 +37,8 @@ class ProductivityTracker:
             self.root.mainloop()
         finally:
             self.monitoring = False
+            self.monitor_thread.join(timeout=2)
+            self.activity_monitor.stop()
 
 if __name__ == "__main__":
     app = ProductivityTracker()
