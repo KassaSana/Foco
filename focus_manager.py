@@ -3,7 +3,6 @@ Focus Manager - Focus sessions and timers
 Manages 90min Deep Work and 25min Quick Focus modes
 """
 import time
-import threading
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -222,8 +221,7 @@ class FocusManager:
                 print(f"🔒 Jail mode active for {duration_hours:.1f} hours")
                 # Start enforcement monitoring loop in background
                 try:
-                    monitor_thread = threading.Thread(target=self.jail_enforcer.monitor_loop, daemon=True)
-                    monitor_thread.start()
+                    self.jail_enforcer.start_monitoring()
                 except Exception as mt_err:
                     print(f"⚠️ Failed to start jail monitor thread: {mt_err}")
             

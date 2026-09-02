@@ -26,6 +26,7 @@ class ProductivityDashboard:
         self.last_activity_text = ""
 
         self._build_ui()
+        self._recover_jail()
         self._start_refresh_loop()
 
     # ---------------- UI Construction ----------------
@@ -123,10 +124,25 @@ class ProductivityDashboard:
             self.manual_jail = ProductivityEnforcer()
             if self.manual_jail.start_enforcement(hours):
                 self._manual_jail_active = True
+                self.manual_jail.start_monitoring()
                 self.jail_status_label.config(text=f"🔒 Manual jail active ({hours}h)")
         except Exception as e:
             import tkinter.messagebox as m
             m.showerror("Error", f"Failed to start jail: {e}")
+
+    def _recover_jail(self):
+        """Resume monitoring a saved jail or remove an expired stale block."""
+        try:
+            from productivity_enforcer import ProductivityEnforcer
+            self.manual_jail = ProductivityEnforcer()
+            end_time = self.manual_jail.recover_enforcement()
+            if end_time:
+                self._manual_jail_active = True
+                self.manual_jail.start_monitoring()
+                remaining = max(0, int((end_time - datetime.now()).total_seconds() / 60))
+                self.jail_status_label.config(text=f"🔒 Jail restored ({remaining}m remaining)")
+        except Exception as e:
+            print(f"Could not recover productivity jail: {e}")
 
     def _disable_all_jail(self):
         try:

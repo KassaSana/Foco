@@ -12,16 +12,25 @@ import winreg
 import ctypes
 from ctypes import wintypes
 import time
+import threading
 
 class ProductivityEnforcer:
-    def __init__(self):
-        self.hosts_file = r"C:\Windows\System32\drivers\etc\hosts"
-        self.hosts_backup = Path("productivity_data") / "hosts_backup.txt"
+    BLOCK_START = "# FOCO PRODUCTIVITY BLOCKER START"
+    BLOCK_END = "# FOCO PRODUCTIVITY BLOCKER END"
+    LEGACY_MARKER = "# PRODUCTIVITY_BLOCKER"
+
+    def __init__(self, hosts_file=None, data_dir="productivity_data", flush_dns=True):
+        self.hosts_file = str(hosts_file or r"C:\Windows\System32\drivers\etc\hosts")
+        self.data_dir = Path(data_dir)
+        self.hosts_backup = self.data_dir / "hosts_backup.txt"
+        self.state_file = self.data_dir / "enforcement_state.json"
+        self.flush_dns = flush_dns
         self.blocked_processes = []
         self.enforcement_active = False
+        self._monitor_thread = None
         
         # Ensure data directory exists
-        Path("productivity_data").mkdir(exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         
         # Load configuration
         self.load_block_config()
@@ -112,48 +121,88 @@ class ProductivityEnforcer:
         ]
     
     def backup_hosts_file(self):
-        """Backup original hosts file"""
+        """Back up the clean hosts file once without overwriting that safety copy."""
         try:
+            if self.hosts_backup.exists():
+                return True
             if os.path.exists(self.hosts_file):
-                with open(self.hosts_file, 'r') as f:
+                with open(self.hosts_file, 'r', encoding='utf-8', errors='replace') as f:
                     content = f.read()
-                with open(self.hosts_backup, 'w') as f:
+                with open(self.hosts_backup, 'w', encoding='utf-8') as f:
                     f.write(content)
-                print("✅ Hosts file backed up")
+                print("Hosts file backed up")
                 return True
         except Exception as e:
-            print(f"❌ Error backing up hosts file: {e}")
+            print(f"Error backing up hosts file: {e}")
             return False
     
+    def _without_foco_entries(self, lines):
+        """Remove Foco-managed entries while preserving every user-managed line."""
+        cleaned = []
+        inside_block = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped == self.BLOCK_START:
+                inside_block = True
+                continue
+            if stripped == self.BLOCK_END:
+                inside_block = False
+                continue
+            if inside_block:
+                continue
+            if stripped.endswith(self.LEGACY_MARKER):
+                continue
+            if stripped == "# PRODUCTIVITY BLOCKER - DO NOT EDIT BELOW THIS LINE":
+                continue
+            cleaned.append(line)
+        return cleaned
+
+    def has_block_entries(self):
+        """Return whether the hosts file contains Foco-managed entries."""
+        try:
+            with open(self.hosts_file, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+            return self.BLOCK_START in content or self.LEGACY_MARKER in content
+        except OSError:
+            return False
+
+    def _flush_dns(self):
+        if not self.flush_dns:
+            return
+        try:
+            subprocess.run(["ipconfig", "/flushdns"], capture_output=True, check=False)
+        except OSError as e:
+            print(f"⚠️ Could not flush DNS cache: {e}")
+
     def modify_hosts_file(self, block=True):
         """Modify hosts file to block/unblock websites"""
         try:
             # Read current hosts file
-            with open(self.hosts_file, 'r') as f:
+            with open(self.hosts_file, 'r', encoding='utf-8', errors='replace') as f:
                 lines = f.readlines()
             
-            # Remove existing productivity blocker entries
-            lines = [line for line in lines if not line.strip().endswith("# PRODUCTIVITY_BLOCKER")]
+            lines = self._without_foco_entries(lines)
             
             if block:
-                # Add blocking entries
-                lines.append("\n# PRODUCTIVITY BLOCKER - DO NOT EDIT BELOW THIS LINE\n")
+                if lines and not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                lines.extend(["\n", f"{self.BLOCK_START}\n"])
                 for site in self.blocked_sites:
-                    lines.append(f"127.0.0.1 {site} # PRODUCTIVITY_BLOCKER\n")
+                    lines.append(f"127.0.0.1 {site}\n")
+                lines.append(f"{self.BLOCK_END}\n")
             
             # Write back to hosts file
-            with open(self.hosts_file, 'w') as f:
+            with open(self.hosts_file, 'w', encoding='utf-8', newline='') as f:
                 f.writelines(lines)
             
-            # Flush DNS cache
-            subprocess.run(["ipconfig", "/flushdns"], capture_output=True)
+            self._flush_dns()
             
             action = "blocked" if block else "unblocked"
-            print(f"✅ Websites {action}")
+            print(f"Websites {action}")
             return True
             
         except Exception as e:
-            print(f"❌ Error modifying hosts file: {e}")
+            print(f"Error modifying hosts file: {e}")
             print("Make sure you're running as administrator!")
             return False
     
@@ -284,12 +333,12 @@ class ProductivityEnforcer:
     
     def stop_enforcement(self):
         """Stop productivity enforcement"""
-        print("🔓 Stopping Productivity Enforcement Mode")
+        print("Stopping Productivity Enforcement Mode")
         
         if self.modify_hosts_file(block=False):
             self.enforcement_active = False
             self.clear_enforcement_state()
-            print("✅ All restrictions removed")
+            print("All restrictions removed")
             return True
         
         return False
@@ -302,23 +351,20 @@ class ProductivityEnforcer:
             'started': datetime.now().isoformat()
         }
         
-        with open(Path("productivity_data") / "enforcement_state.json", 'w') as f:
+        temp_file = self.state_file.with_suffix('.tmp')
+        with open(temp_file, 'w', encoding='utf-8') as f:
             json.dump(state, f, indent=2)
+        temp_file.replace(self.state_file)
     
     def load_enforcement_state(self):
-        """Load enforcement state"""
-        state_file = Path("productivity_data") / "enforcement_state.json"
-        
-        if state_file.exists():
+        """Return the saved end time, including an already-expired end time."""
+        if self.state_file.exists():
             try:
-                with open(state_file, 'r') as f:
+                with open(self.state_file, 'r', encoding='utf-8') as f:
                     state = json.load(f)
                 
                 if state.get('active'):
-                    end_time = datetime.fromisoformat(state['end_time'])
-                    if datetime.now() < end_time:
-                        self.enforcement_active = True
-                        return end_time
+                    return datetime.fromisoformat(state['end_time'])
                 
             except Exception as e:
                 print(f"Error loading enforcement state: {e}")
@@ -327,9 +373,35 @@ class ProductivityEnforcer:
     
     def clear_enforcement_state(self):
         """Clear enforcement state file"""
-        state_file = Path("productivity_data") / "enforcement_state.json"
-        if state_file.exists():
-            state_file.unlink()
+        if self.state_file.exists():
+            self.state_file.unlink()
+
+    def recover_enforcement(self):
+        """Resume a live jail or clean up stale blocking after a restart."""
+        end_time = self.load_enforcement_state()
+        if end_time is None:
+            if self.has_block_entries():
+                self.modify_hosts_file(block=False)
+            return None
+
+        if datetime.now() >= end_time:
+            self.enforcement_active = True
+            self.stop_enforcement()
+            return None
+
+        self.enforcement_active = True
+        if not self.has_block_entries() and not self.modify_hosts_file(block=True):
+            self.enforcement_active = False
+            return None
+        return end_time
+
+    def start_monitoring(self):
+        """Start one daemon monitor thread for the current enforcement period."""
+        if self._monitor_thread and self._monitor_thread.is_alive():
+            return self._monitor_thread
+        self._monitor_thread = threading.Thread(target=self.monitor_loop, daemon=True)
+        self._monitor_thread.start()
+        return self._monitor_thread
     
     def monitor_loop(self):
         """Main monitoring loop"""
@@ -339,8 +411,8 @@ class ProductivityEnforcer:
             while self.enforcement_active:
                 # Check if enforcement time has expired
                 end_time = self.load_enforcement_state()
-                if end_time and datetime.now() >= end_time:
-                    print("⏰ Enforcement period ended")
+                if end_time is None or datetime.now() >= end_time:
+                    print("Enforcement period ended")
                     self.stop_enforcement()
                     break
                 
