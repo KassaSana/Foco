@@ -1,7 +1,4 @@
-"""
-Simple ADHD Productivity Tracker
-Main entry point for the application
-"""
+"""Foco desktop application entry point."""
 import tkinter as tk
 from dashboard import ProductivityDashboard
 from activity_monitor import ActivityMonitor
@@ -9,10 +6,10 @@ from data_logger import DataLogger
 import threading
 import time
 
-class ProductivityTracker:
+class FocoApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("ADHD Productivity Tracker")
+        self.root.title("Foco")
         self.root.geometry("800x600")
         
         # Initialize components
@@ -41,5 +38,5 @@ class ProductivityTracker:
             self.activity_monitor.stop()
 
 if __name__ == "__main__":
-    app = ProductivityTracker()
+    app = FocoApp()
     app.run()

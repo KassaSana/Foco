@@ -133,26 +133,26 @@ class TrendAnalyzer:
         weekly_trends = self.analyze_weekly_trends(4)
         if 'growth_percentage' in weekly_trends:
             if weekly_trends['growth_percentage'] > 10:
-                insights.append(f"📈 Great progress! Up {weekly_trends['growth_percentage']}% from last week")
+                insights.append(f"Great progress: up {weekly_trends['growth_percentage']}% from last week")
             elif weekly_trends['growth_percentage'] < -10:
-                insights.append(f"📉 Productivity down {abs(weekly_trends['growth_percentage'])}% from last week")
+                insights.append(f"Productivity is down {abs(weekly_trends['growth_percentage'])}% from last week")
         
         # Category analysis
         if 'most_improved_category' in weekly_trends and weekly_trends['most_improved_category']:
             category_info = weekly_trends['most_improved_category']
             if category_info['improvement'] > 20:
-                insights.append(f"🚀 {category_info['category']} time up {category_info['improvement']}%!")
+                insights.append(f"{category_info['category']} time is up {category_info['improvement']}%")
         
         # Monthly trends
         monthly_trends = self.analyze_monthly_trends(3)
         if monthly_trends['consistency_trend'] == 'improving':
-            insights.append("⭐ Your consistency is improving month over month")
+            insights.append("Your consistency is improving month over month")
         elif monthly_trends['consistency_trend'] == 'declining':
-            insights.append("⚠️ Consider focusing on more consistent daily habits")
+            insights.append("Consider focusing on more consistent daily habits")
         
         # General insights
         if len(insights) == 0:
-            insights.append("📊 Keep tracking to see your progress trends")
+            insights.append("Keep tracking to see your progress trends")
         
         return insights[:3]  # Return top 3 insights
     

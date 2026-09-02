@@ -32,7 +32,7 @@ class ProductivityDashboard:
 
     # ---------------- UI Construction ----------------
     def _build_ui(self):
-        self.root.title("ADHD Productivity Tracker")
+        self.root.title("Foco")
         self.root.configure(bg="#2b2b2b")
 
         self.notebook = ttk.Notebook(self.root)
@@ -98,10 +98,10 @@ class ProductivityDashboard:
         # Manual Jail Controls
         jail_frame = ttk.LabelFrame(f, text="Productivity Jail")
         jail_frame.pack(fill="x", pady=6)
-        ttk.Button(jail_frame, text="🔒 2h", command=lambda: self._start_manual_jail(2)).pack(side="left", padx=4, pady=6)
-        ttk.Button(jail_frame, text="🔒 4h", command=lambda: self._start_manual_jail(4)).pack(side="left", padx=4)
-        ttk.Button(jail_frame, text="🔒 8h", command=lambda: self._start_manual_jail(8)).pack(side="left", padx=4)
-        ttk.Button(jail_frame, text="🚨 Disable", command=self._disable_all_jail).pack(side="left", padx=16)
+        ttk.Button(jail_frame, text="Block 2h", command=lambda: self._start_manual_jail(2)).pack(side="left", padx=4, pady=6)
+        ttk.Button(jail_frame, text="Block 4h", command=lambda: self._start_manual_jail(4)).pack(side="left", padx=4)
+        ttk.Button(jail_frame, text="Block 8h", command=lambda: self._start_manual_jail(8)).pack(side="left", padx=4)
+        ttk.Button(jail_frame, text="Disable", command=self._disable_all_jail).pack(side="left", padx=16)
 
     def _start_focus(self):
         mode = self.mode_var.get()
@@ -141,7 +141,7 @@ class ProductivityDashboard:
             if self.manual_jail.start_enforcement(hours):
                 self._manual_jail_active = True
                 self.manual_jail.start_monitoring()
-                self.jail_status_label.config(text=f"🔒 Manual jail active ({hours}h)")
+                self.jail_status_label.config(text=f"Focus jail active ({hours}h)")
         except Exception as e:
             import tkinter.messagebox as m
             m.showerror("Error", f"Failed to start jail: {e}")
@@ -156,7 +156,7 @@ class ProductivityDashboard:
                 self._manual_jail_active = True
                 self.manual_jail.start_monitoring()
                 remaining = max(0, int((end_time - datetime.now()).total_seconds() / 60))
-                self.jail_status_label.config(text=f"🔒 Jail restored ({remaining}m remaining)")
+                self.jail_status_label.config(text=f"Focus jail restored ({remaining}m remaining)")
         except Exception as e:
             print(f"Could not recover productivity jail: {e}")
 
@@ -519,7 +519,7 @@ class ProductivityDashboard:
             self.focus_progress['value'] = pct
             # Jail indicator
             if info['mode'] == 'Deep Work' and self.focus_manager.session_data.get('jail_active'):
-                self.jail_status_label.config(text='🔒 Auto jail active (Deep Work)')
+                self.jail_status_label.config(text='Focus jail active (Deep Work)')
             elif not self._manual_jail_active:
                 self.jail_status_label.config(text='Productivity jail inactive')
             if info['state'] == 'Completed':

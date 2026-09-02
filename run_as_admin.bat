@@ -1,10 +1,10 @@
 @echo off
-title ADHD Productivity Tracker - Admin Setup
+title Foco - Admin Setup
 color 0A
 
 echo.
 echo  ====================================
-echo   🧠 ADHD Productivity Tracker  
+echo   Foco
 echo  ====================================
 echo.
 echo  This will launch the tracker with admin privileges
@@ -14,10 +14,10 @@ echo.
 :: Check if running as admin
 net session >nul 2>&1
 if %errorLevel% == 0 (
-    echo  ✅ Running with admin privileges
+    echo  Running with admin privileges
     goto :run_app
 ) else (
-    echo  ⚠️  Requesting admin privileges...
+    echo  Requesting admin privileges...
     echo.
     
     :: Request admin privileges
@@ -26,7 +26,7 @@ if %errorLevel% == 0 (
 )
 
 :run_app
-echo  🚀 Starting productivity tracker...
+echo  Starting Foco...
 echo.
 
 :: Change to script directory
@@ -37,7 +37,7 @@ python app_launcher.py
 
 if %errorLevel% neq 0 (
     echo.
-    echo  ❌ Error running the application.
+    echo  Error running the application.
     echo  Make sure Python and required packages are installed:
     echo  pip install psutil pywin32
     echo.

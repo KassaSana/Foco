@@ -99,7 +99,7 @@ def create_browser_extension():
     """Create a simple browser extension manifest for Chrome"""
     manifest = {
         "manifest_version": 3,
-        "name": "ADHD Productivity YouTube Filter",
+        "name": "Foco YouTube Filter",
         "version": "1.0",
         "description": "Blocks non-educational YouTube content during focus sessions",
         "permissions": ["activeTab", "storage"],
@@ -118,7 +118,7 @@ def create_browser_extension():
 def create_youtube_filter_js():
     """Create JavaScript for YouTube filtering"""
     js_code = '''
-// ADHD Productivity YouTube Filter
+// Foco YouTube Filter
 (function() {
     'use strict';
     
@@ -168,9 +168,9 @@ def create_youtube_filter_js():
         document.body.innerHTML = `
             <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #1a1a1a; color: white; font-family: Arial;">
                 <div style="text-align: center;">
-                    <h1>🔒 Content Blocked</h1>
+                    <h1>Content Blocked</h1>
                     <p>This video is not educational content.</p>
-                    <p>Focus on your studies! 💪</p>
+                    <p>Return to the work you committed to.</p>
                     <p><a href="/results?search_query=programming+tutorial" style="color: #4CAF50;">Find educational content instead</a></p>
                 </div>
             </div>
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         "Algorithm Explained: Binary Search"
     ]
     
-    print("🧪 Testing YouTube Filter:")
+    print("Testing Foco YouTube Filter:")
     print("=" * 40)
     
     for video in test_videos:
@@ -230,5 +230,5 @@ if __name__ == "__main__":
             title, channel = video, None
         
         is_allowed = filter.is_educational_content(title, channel)
-        status = "✅ ALLOWED" if is_allowed else "❌ BLOCKED"
+        status = "ALLOWED" if is_allowed else "BLOCKED"
         print(f"{status}: {title}")

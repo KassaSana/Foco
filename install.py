@@ -1,7 +1,4 @@
-"""
-Simple installer/updater for ADHD Productivity Tracker
-Checks dependencies and sets up the app for first-time use
-"""
+"""Foco dependency and first-run setup utility."""
 import subprocess
 import sys
 import os
@@ -11,29 +8,29 @@ def check_python():
     """Check Python version"""
     version = sys.version_info
     if version.major < 3 or (version.major == 3 and version.minor < 7):
-        print("❌ Python 3.7+ required. Current version:", sys.version)
+        print("Python 3.7+ required. Current version:", sys.version)
         return False
-    print(f"✅ Python {version.major}.{version.minor}.{version.micro}")
+    print(f"Python {version.major}.{version.minor}.{version.micro}")
     return True
 
 def install_packages():
     """Install required packages"""
     packages = ['psutil', 'pywin32']
     
-    print("📦 Installing required packages...")
+    print("Installing required packages...")
     
     for package in packages:
         try:
             __import__(package)
-            print(f"✅ {package} already installed")
+            print(f"{package} already installed")
         except ImportError:
-            print(f"📥 Installing {package}...")
+            print(f"Installing {package}...")
             try:
                 subprocess.run([sys.executable, '-m', 'pip', 'install', package], 
                              check=True, capture_output=True, text=True)
-                print(f"✅ {package} installed successfully")
+                print(f"{package} installed successfully")
             except subprocess.CalledProcessError as e:
-                print(f"❌ Failed to install {package}: {e}")
+                print(f"Failed to install {package}: {e}")
                 return False
     
     return True
@@ -42,7 +39,7 @@ def create_desktop_shortcut():
     """Create desktop shortcut to the batch file"""
     try:
         desktop = Path.home() / "Desktop"
-        shortcut_name = "ADHD Productivity Tracker"
+        shortcut_name = "Foco"
         
         # Create a simple .bat file on desktop that calls our main bat
         batch_content = f'''@echo off
@@ -54,18 +51,18 @@ call run_as_admin.bat
         with open(desktop_bat, 'w') as f:
             f.write(batch_content)
         
-        print(f"✅ Desktop shortcut created: {desktop_bat}")
+        print(f"Desktop shortcut created: {desktop_bat}")
         return True
         
     except Exception as e:
-        print(f"⚠️ Could not create desktop shortcut: {e}")
+        print(f"Could not create desktop shortcut: {e}")
         return False
 
 def setup_data_folder():
     """Ensure data folder exists"""
     data_folder = Path("productivity_data")
     data_folder.mkdir(exist_ok=True)
-    print(f"✅ Data folder ready: {data_folder.absolute()}")
+    print(f"Data folder ready: {data_folder.absolute()}")
 
 def test_imports():
     """Test all module imports"""
@@ -75,7 +72,7 @@ def test_imports():
         'category_engine', 'data_logger'
     ]
     
-    print("🧪 Testing module imports...")
+    print("Testing module imports...")
     
     for module in modules:
         try:
@@ -86,16 +83,16 @@ def test_imports():
                 exec(f"import {module}")
             else:
                 __import__(module)
-            print(f"✅ {module}")
+            print(f"{module}")
         except ImportError as e:
-            print(f"❌ {module}: {e}")
+            print(f"{module}: {e}")
             return False
     
     return True
 
 def main():
     """Main installer function"""
-    print("🧠 ADHD Productivity Tracker - Setup & Installation")
+    print("Foco - Setup and Installation")
     print("=" * 55)
     
     # Check Python version
@@ -105,7 +102,7 @@ def main():
     
     # Install packages
     if not install_packages():
-        print("❌ Package installation failed")
+        print("Package installation failed")
         input("Press Enter to exit...")
         return
     
@@ -114,26 +111,26 @@ def main():
     
     # Test imports
     if not test_imports():
-        print("❌ Some modules failed to import")
+        print("Some modules failed to import")
         input("Press Enter to continue anyway...")
     
     # Offer desktop shortcut
-    response = input("\n🖥️ Create desktop shortcut? (y/n): ").lower().strip()
+    response = input("\nCreate desktop shortcut? (y/n): ").lower().strip()
     if response in ['y', 'yes']:
         create_desktop_shortcut()
     
-    print("\n🎉 Installation Complete!")
-    print("\n📋 Next Steps:")
+    print("\nInstallation complete")
+    print("\nNext Steps:")
     print("1. Double-click 'run_as_admin.bat' to start the tracker")
     print("2. Allow admin privileges when prompted (for better tracking)")
     print("3. The tracker will start automatically monitoring")
     print("4. Use focus timers for deep work sessions")
     
-    print("\n💾 Your data is stored in: productivity_data/")
-    print("🔒 Everything stays private on your machine")
+    print("\nYour data is stored in: productivity_data/")
+    print("Everything stays private on your machine")
     
     # Ask if they want to run now
-    response = input("\n🚀 Launch the tracker now? (y/n): ").lower().strip()
+    response = input("\nLaunch Foco now? (y/n): ").lower().strip()
     if response in ['y', 'yes']:
         print("\n Starting tracker...")
         os.system('python app_launcher.py')

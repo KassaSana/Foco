@@ -1,7 +1,4 @@
-"""
-Productivity Enforcer - Website and Application Blocker
-Blocks distracting websites and applications during work sessions
-"""
+"""Foco website and application blocking service."""
 import os
 import sys
 import subprocess
@@ -179,7 +176,7 @@ class ProductivityEnforcer:
         try:
             subprocess.run(["ipconfig", "/flushdns"], capture_output=True, check=False)
         except OSError as e:
-            print(f"⚠️ Could not flush DNS cache: {e}")
+            print(f"Could not flush DNS cache: {e}")
 
     def modify_hosts_file(self, block=True):
         """Modify hosts file to block/unblock websites"""
@@ -249,14 +246,14 @@ class ProductivityEnforcer:
                     proc_name = proc.info['name'].lower()
                     
                     if proc_name in [app.lower() for app in self.blocked_apps]:
-                        print(f"🚫 Blocking {proc_name} (PID: {proc.info['pid']})")
+                        print(f"Blocking {proc_name} (PID: {proc.info['pid']})")
                         proc.terminate()  # Terminate the process
                         
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     pass
                     
         except ImportError:
-            print("⚠️ psutil not available for process monitoring")
+            print("psutil is not available for process monitoring")
     
     def check_browser_content(self):
         """Monitor browser windows for blocked content"""
@@ -281,15 +278,15 @@ class ProductivityEnforcer:
                         # Special handling for YouTube
                         if "youtube" in title_lower:
                             if not self.check_youtube_content(window_title):
-                                print(f"🚫 Blocked YouTube content: {window_title[:50]}...")
+                                print(f"Blocked YouTube content: {window_title[:50]}...")
                                 self.show_block_message("YouTube content blocked", 
                                                        "Only educational content allowed!")
                         else:
-                            print(f"🚫 Blocked site detected: {site}")
+                            print(f"Blocked site detected: {site}")
                             self.show_block_message("Website blocked", f"{site} is not allowed during work time")
                             
         except ImportError:
-            print("⚠️ win32gui not available for browser monitoring")
+            print("win32gui is not available for browser monitoring")
     
     def show_block_message(self, title, message):
         """Show blocking notification"""
@@ -299,15 +296,15 @@ class ProductivityEnforcer:
             
             root = tk.Tk()
             root.withdraw()  # Hide main window
-            messagebox.showwarning(title, f"{message}\n\nFocus on your work! 💪")
+            messagebox.showwarning(title, f"{message}\n\nReturn to the work you committed to.")
             root.destroy()
             
         except Exception:
-            print(f"🚫 {title}: {message}")
+            print(f"{title}: {message}")
     
     def start_enforcement(self, duration_hours=8):
         """Start productivity enforcement"""
-        print("🔒 Starting Productivity Enforcement Mode")
+        print("Starting Foco focus jail")
         print("=" * 50)
         
         if not self.backup_hosts_file():
@@ -319,19 +316,8 @@ class ProductivityEnforcer:
         self.enforcement_active = True
         end_time = datetime.now() + timedelta(hours=duration_hours)
         
-        print(f"✅ Enforcement active until: {end_time.strftime('%I:%M %p')}")
-        print("\n📋 What's blocked:")
-        print("❌ Social media (Reddit, Twitter, Facebook, etc.)")
-        print("❌ Entertainment YouTube (only educational allowed)")
-        print("❌ Gaming platforms and games")
-        print("❌ News and shopping sites")
-        print("❌ Messaging apps")
-        
-        print("\n📋 What's allowed:")
-        print("✅ Programming tools (VS Code, IDEs, terminals)")
-        print("✅ Educational content (NeetCode, lectures, courses)")
-        print("✅ Work websites (GitHub, Stack Overflow, documentation)")
-        print("✅ GeeksforGeeks and learning platforms")
+        print(f"Enforcement active until: {end_time.strftime('%I:%M %p')}")
+        print(f"Blocking {len(self.blocked_sites)} domains and {len(self.blocked_apps)} applications.")
         
         # Save enforcement state
         self.save_enforcement_state(end_time)
@@ -412,7 +398,7 @@ class ProductivityEnforcer:
     
     def monitor_loop(self):
         """Main monitoring loop"""
-        print("👁️ Starting productivity monitoring...")
+        print("Starting focus jail monitoring...")
         
         try:
             while self.enforcement_active:
@@ -430,20 +416,20 @@ class ProductivityEnforcer:
                 time.sleep(5)  # Check every 5 seconds
                 
         except KeyboardInterrupt:
-            print("\n🛑 Monitoring stopped by user")
+            print("\nMonitoring stopped by user")
         except Exception as e:
-            print(f"❌ Error in monitoring loop: {e}")
+            print(f"Error in monitoring loop: {e}")
 
 def main():
     """Main function"""
-    print("🔒 ADHD Productivity Enforcer")
+    print("Foco Focus Jail")
     print("=" * 40)
     print("Turn your laptop into a focused work machine!")
     
     # Check admin privileges
     try:
         if not ctypes.windll.shell32.IsUserAnAdmin():
-            print("❌ Administrator privileges required!")
+            print("Administrator privileges required.")
             print("Right-click and 'Run as Administrator'")
             input("Press Enter to exit...")
             return
@@ -453,16 +439,16 @@ def main():
     enforcer = ProductivityEnforcer()
     
     # Check if enforcement is already active
-    end_time = enforcer.load_enforcement_state()
+    end_time = enforcer.recover_enforcement()
     if end_time:
-        print(f"⚠️ Enforcement already active until: {end_time.strftime('%I:%M %p')}")
+        print(f"Enforcement already active until: {end_time.strftime('%I:%M %p')}")
         choice = input("Continue monitoring? (y/n): ").lower().strip()
         if choice in ['y', 'yes']:
             enforcer.enforcement_active = True
             enforcer.monitor_loop()
             return
     
-    print("\n📋 Options:")
+    print("\nOptions:")
     print("1. Start 8-hour work session")
     print("2. Start 4-hour study session") 
     print("3. Start 2-hour focus session")
@@ -487,13 +473,13 @@ def main():
             if enforcer.start_enforcement(hours):
                 enforcer.monitor_loop()
         except ValueError:
-            print("❌ Invalid number")
+            print("Invalid number")
     elif choice == '5':
         enforcer.stop_enforcement()
     elif choice == '6':
-        print("Goodbye! 👋")
+        print("Goodbye")
     else:
-        print("❌ Invalid choice")
+        print("Invalid choice")
 
 if __name__ == "__main__":
     main()

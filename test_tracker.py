@@ -9,7 +9,7 @@ from focus_manager import FocusManager, FocusMode
 import time
 
 def test_basic_functionality():
-    print("🧠 Testing ADHD Productivity Tracker Components")
+    print("Testing Foco components")
     print("=" * 50)
     
     # Test CategoryEngine
@@ -26,7 +26,7 @@ def test_basic_functionality():
     for app, title in test_apps:
         category = engine.categorize_activity(app, title)
         is_pseudo = engine.is_pseudo_productive(app, title)
-        flag = " ⚠️ PSEUDO" if is_pseudo else " ✅"
+        flag = " PSEUDO" if is_pseudo else ""
         print(f"   {app} + '{title[:30]}...' -> {category}{flag}")
     
     # Test DataLogger
@@ -81,7 +81,7 @@ def test_basic_functionality():
     if session_data:
         print(f"   Session completed: {session_data['completion_percentage']}% done")
     
-    print("\n✅ All components working correctly!")
+    print("\nAll components working correctly")
     print("\nTo run the full GUI application:")
     print("python main.py")
 

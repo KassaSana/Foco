@@ -38,7 +38,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='ADHD_Productivity_Tracker',
+    name='Foco',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -58,76 +58,76 @@ exe = EXE(
 
 def create_app():
     """Create the Windows executable"""
-    print("🏗️ Setting up ADHD Productivity Tracker as Windows App")
+    print("Setting up Foco as a Windows application")
     print("=" * 60)
     
     # Check if PyInstaller is installed
     try:
         import PyInstaller
-        print("✅ PyInstaller found")
+        print("PyInstaller found")
     except ImportError:
-        print("❌ PyInstaller not found. Installing...")
+        print("PyInstaller not found. Installing...")
         os.system("pip install pyinstaller")
-        print("✅ PyInstaller installed")
+        print("PyInstaller installed")
     
     # Write spec file
     with open('tracker_app.spec', 'w') as f:
         f.write(PYINSTALLER_SPEC)
-    print("✅ Created PyInstaller spec file")
+    print("Created PyInstaller spec file")
     
     # Build the executable
-    print("🔨 Building executable... (this may take a few minutes)")
+    print("Building executable... (this may take a few minutes)")
     result = os.system("pyinstaller tracker_app.spec --clean")
     
     if result == 0:
-        print("✅ Executable created successfully!")
+        print("Executable created successfully")
         print("\n📁 Your app is located at:")
-        print("   dist/ADHD_Productivity_Tracker.exe")
+        print("   dist/Foco.exe")
         
         # Check if executable exists
-        exe_path = Path("dist/ADHD_Productivity_Tracker.exe")
+        exe_path = Path("dist/Foco.exe")
         if exe_path.exists():
             print(f"   Size: {exe_path.stat().st_size / (1024*1024):.1f} MB")
             
             # Create desktop shortcut option
             create_shortcut_option(exe_path)
         else:
-            print("⚠️ Executable not found in expected location")
+            print("Executable not found in expected location")
     else:
-        print("❌ Build failed. Check the output above for errors.")
+        print("Build failed. Check the output above for errors.")
 
 def create_shortcut_option(exe_path):
     """Offer to create a desktop shortcut"""
-    response = input("\n🖥️ Create desktop shortcut? (y/n): ").lower().strip()
+    response = input("\nCreate desktop shortcut? (y/n): ").lower().strip()
     
     if response in ['y', 'yes']:
         try:
             import win32com.client
             
             desktop = Path.home() / "Desktop"
-            shortcut_path = desktop / "ADHD Productivity Tracker.lnk"
+            shortcut_path = desktop / "Foco.lnk"
             
             shell = win32com.client.Dispatch("WScript.Shell")
             shortcut = shell.CreateShortCut(str(shortcut_path))
             shortcut.Targetpath = str(exe_path.absolute())
             shortcut.WorkingDirectory = str(exe_path.parent)
-            shortcut.Description = "ADHD Productivity Tracker - Monitor your real productivity"
+            shortcut.Description = "Foco - private focus tracking and distraction blocking"
             shortcut.save()
             
-            print(f"✅ Desktop shortcut created: {shortcut_path}")
+            print(f"Desktop shortcut created: {shortcut_path}")
             
         except ImportError:
-            print("❌ Cannot create shortcut (win32com not available)")
+            print("Cannot create shortcut (win32com not available)")
             print("You can manually create a shortcut to:")
             print(f"   {exe_path.absolute()}")
         except Exception as e:
-            print(f"❌ Error creating shortcut: {e}")
+            print(f"Error creating shortcut: {e}")
 
 def create_batch_runner():
     """Create a simple batch file to run the app"""
     batch_content = '''@echo off
-title ADHD Productivity Tracker
-echo Starting ADHD Productivity Tracker...
+title Foco
+echo Starting Foco...
 echo.
 
 cd /d "%~dp0"
@@ -139,7 +139,7 @@ pause
     with open('run_tracker.bat', 'w') as f:
         f.write(batch_content)
     
-    print("✅ Created run_tracker.bat for easy launching")
+    print("Created run_tracker.bat for easy launching")
 
 def main():
     """Main setup function"""
@@ -156,8 +156,8 @@ def main():
     if choice in ['2', '3']:
         create_batch_runner()
     
-    print("\n🎉 Setup complete!")
-    print("\n📋 Usage Instructions:")
+    print("\nSetup complete")
+    print("\nUsage Instructions:")
     print("1. Run the executable with admin privileges for best window detection")
     print("2. The app will automatically track your productivity")
     print("3. Use focus timers for deep work sessions")

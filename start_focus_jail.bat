@@ -1,9 +1,9 @@
 @echo off
-title ADHD Productivity Enforcer - FOCUS MODE
+title Foco - Focus Jail
 color 0C
 echo.
 echo  ==========================================
-echo   🔒 PRODUCTIVITY ENFORCER - JAIL MODE
+echo   FOCO - FOCUS JAIL
 echo  ==========================================
 echo.
 echo  WARNING: This will block ALL distracting websites and apps!
@@ -16,10 +16,10 @@ echo.
 :: Check if running as admin
 net session >nul 2>&1
 if %errorLevel% == 0 (
-    echo  ✅ Running with admin privileges
+    echo  Running with admin privileges
     goto :show_menu
 ) else (
-    echo  ❌ ADMIN PRIVILEGES REQUIRED!
+    echo  ADMINISTRATOR PRIVILEGES REQUIRED!
     echo  Right-click this file and select "Run as Administrator"
     echo.
     pause
@@ -27,7 +27,7 @@ if %errorLevel% == 0 (
 )
 
 :show_menu
-echo  📋 Choose your focus session:
+echo  Choose your focus session:
 echo.
 echo  [1] 8-hour WORK DAY (Full productivity jail)
 echo  [2] 4-hour STUDY SESSION
@@ -43,7 +43,7 @@ cd /d "%~dp0"
 
 if "%choice%"=="1" (
     echo.
-    echo  🔒 Starting 8-hour productivity jail...
+    echo  Starting 8-hour focus jail...
     python productivity_enforcer.py
 ) else if "%choice%"=="2" (
     echo.
@@ -62,13 +62,13 @@ if "%choice%"=="1" (
     echo  🚨 EMERGENCY DISABLE - Removing all blocks...
     python -c "from productivity_enforcer import ProductivityEnforcer; ProductivityEnforcer().stop_enforcement()"
     echo.
-    echo  ✅ All restrictions removed!
+    echo  All restrictions removed.
     pause
 ) else if "%choice%"=="6" (
-    echo  Goodbye! 👋
+    echo  Goodbye
     exit /b
 ) else (
-    echo  ❌ Invalid choice
+    echo  Invalid choice
     pause
     goto :show_menu
 )

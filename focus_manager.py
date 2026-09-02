@@ -218,15 +218,15 @@ class FocusManager:
             
             if self.jail_enforcer.start_enforcement(duration_hours):
                 self.session_data['jail_active'] = True
-                print(f"🔒 Jail mode active for {duration_hours:.1f} hours")
+                print(f"Focus jail active for {duration_hours:.1f} hours")
                 # Start enforcement monitoring loop in background
                 try:
                     self.jail_enforcer.start_monitoring()
                 except Exception as mt_err:
-                    print(f"⚠️ Failed to start jail monitor thread: {mt_err}")
+                    print(f"Failed to start jail monitor thread: {mt_err}")
             
         except Exception as e:
-            print(f"⚠️ Jail mode failed to start: {e}")
+            print(f"Focus jail failed to start: {e}")
     
     def _stop_jail_mode(self):
         """Stop productivity jail mode"""
@@ -234,9 +234,9 @@ class FocusManager:
             try:
                 self.jail_enforcer.stop_enforcement()
                 self.session_data['jail_active'] = False
-                print("🔓 Jail mode deactivated")
+                print("Focus jail deactivated")
             except Exception as e:
-                print(f"⚠️ Error stopping jail mode: {e}")
+                print(f"Error stopping focus jail: {e}")
     
 
     

@@ -42,7 +42,7 @@ def run_as_admin():
 
 def main():
     """Main launcher function"""
-    print("🧠 ADHD Productivity Tracker")
+    print("Foco")
     print("=" * 40)
     
     # Check if we need to request admin privileges
@@ -50,7 +50,7 @@ def main():
         print("Requesting admin privileges...")
         sys.exit(0)  # Exit and let the elevated process take over
     
-    print("✅ Running with elevated privileges")
+    print("Running with elevated privileges")
     print("Starting productivity tracker...")
     
     # Change to the script directory
@@ -59,20 +59,20 @@ def main():
     
     try:
         # Import and run the main application
-        from main import ProductivityTracker
+        from main import FocoApp
         
-        print("🚀 Launching dashboard...")
-        app = ProductivityTracker()
+        print("Launching Foco...")
+        app = FocoApp()
         app.run()
         
     except ImportError as e:
-        print(f"❌ Error importing modules: {e}")
+        print(f"Error importing modules: {e}")
         print("\nMake sure to install required packages:")
         print("pip install psutil pywin32")
         input("Press Enter to exit...")
         
     except Exception as e:
-        print(f"❌ Error running application: {e}")
+        print(f"Error running application: {e}")
         input("Press Enter to exit...")
 
 if __name__ == "__main__":

@@ -8,10 +8,10 @@ APP_MANIFEST = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <assemblyIdentity
     version="1.0.0.0"
     processorArchitecture="X86"
-    name="ADHD_Productivity_Tracker"
+    name="Foco"
     type="win32"
   />
-  <description>ADHD Productivity Tracker - Real productivity monitoring</description>
+  <description>Foco - private focus tracking and distraction blocking</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
@@ -40,4 +40,4 @@ APP_MANIFEST = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 if __name__ == "__main__":
     with open('app.manifest', 'w') as f:
         f.write(APP_MANIFEST)
-    print("✅ Created app.manifest for admin privileges")
+    print("Created app.manifest for administrator privileges")
