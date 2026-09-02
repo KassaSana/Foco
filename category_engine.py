@@ -2,31 +2,25 @@
 Category Engine - Smart activity categorization logic
 Categorizes activities and detects pseudo-productive time
 """
-import json
-import os
+from config_manager import load_config
 
 class CategoryEngine:
-    def __init__(self):
+    def __init__(self, config_path="config.json"):
+        self.config_path = config_path
+        self.reload_config()
+
+    def reload_config(self):
         self.config = self.load_config()
-        
         # App patterns for categorization
         self.building_apps = self.config.get('building_apps', [])
         self.studying_apps = self.config.get('studying_apps', [])
         self.applying_sites = self.config.get('applying_sites', [])
         self.pseudo_productive_sites = self.config.get('pseudo_productive_sites', [])
+        return self.config
     
     def load_config(self):
         """Load configuration from config.json"""
-        try:
-            with open('config.json', 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {
-                'building_apps': ['code.exe', 'idea64.exe', 'pycharm64.exe', 'cmd.exe', 'powershell.exe'],
-                'studying_apps': ['canvas', 'pdf', 'notion', 'onenote', 'acrobat'],
-                'applying_sites': ['linkedin.com', 'indeed.com', 'glassdoor.com'],
-                'pseudo_productive_sites': ['youtube.com', 'reddit.com', 'twitter.com']
-            }
+        return load_config(self.config_path)
     
     def categorize_activity(self, app_name, window_title):
         """Categorize an activity into Building/Studying/Applying/Knowledge"""
@@ -34,7 +28,7 @@ class CategoryEngine:
         window_title_lower = window_title.lower()
         
         # Building - Coding, development tools
-        if any(app in app_name_lower for app in self.building_apps):
+        if any(app in app_name_lower or app in window_title_lower for app in self.building_apps):
             return 'Building'
         
         # Terminal/command line work
@@ -42,7 +36,7 @@ class CategoryEngine:
             return 'Building'
         
         # Studying - Educational content, PDFs, notes
-        if any(app in app_name_lower for app in self.studying_apps):
+        if any(app in app_name_lower or app in window_title_lower for app in self.studying_apps):
             return 'Studying'
         
         if any(keyword in window_title_lower for keyword in ['canvas', 'coursera', 'udemy', 'khan academy']):
@@ -53,7 +47,7 @@ class CategoryEngine:
             if any(keyword in window_title_lower for keyword in ['job', 'career', 'apply', 'resume']):
                 return 'Applying'
         
-        if any(site in window_title_lower for site in self.applying_sites):
+        if any(site in window_title_lower or site in app_name_lower for site in self.applying_sites):
             return 'Applying'
         
         # Browser-based categorization
@@ -97,7 +91,8 @@ class CategoryEngine:
                 return True
         
         # Social media sites
-        if any(site in window_title_lower for site in self.pseudo_productive_sites):
+        if any(site in window_title_lower or site in app_name_lower
+               for site in self.pseudo_productive_sites):
             return True
         
         # Reddit programming discussions

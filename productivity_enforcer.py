@@ -13,18 +13,21 @@ import ctypes
 from ctypes import wintypes
 import time
 import threading
+from config_manager import load_config
 
 class ProductivityEnforcer:
     BLOCK_START = "# FOCO PRODUCTIVITY BLOCKER START"
     BLOCK_END = "# FOCO PRODUCTIVITY BLOCKER END"
     LEGACY_MARKER = "# PRODUCTIVITY_BLOCKER"
 
-    def __init__(self, hosts_file=None, data_dir="productivity_data", flush_dns=True):
+    def __init__(self, hosts_file=None, data_dir="productivity_data", flush_dns=True,
+                 config_path="config.json"):
         self.hosts_file = str(hosts_file or r"C:\Windows\System32\drivers\etc\hosts")
         self.data_dir = Path(data_dir)
         self.hosts_backup = self.data_dir / "hosts_backup.txt"
         self.state_file = self.data_dir / "enforcement_state.json"
         self.flush_dns = flush_dns
+        self.config_path = config_path
         self.blocked_processes = []
         self.enforcement_active = False
         self._monitor_thread = None
@@ -119,6 +122,10 @@ class ProductivityEnforcer:
             "chrome.exe", "firefox.exe", "edge.exe",  # Browsers (with site filtering)
             "explorer.exe", "taskmgr.exe"
         ]
+
+        config = load_config(self.config_path)
+        self.blocked_sites = config['blocked_sites']
+        self.blocked_apps = config['blocked_apps']
     
     def backup_hosts_file(self):
         """Back up the clean hosts file once without overwriting that safety copy."""

@@ -4,6 +4,7 @@ Manages 90min Deep Work and 25min Quick Focus modes
 """
 from datetime import datetime
 from enum import Enum
+from config_manager import load_config
 
 class FocusMode(Enum):
     DEEP_WORK = "Deep Work"
@@ -16,9 +17,10 @@ class FocusState(Enum):
     COMPLETED = "Completed"
 
 class FocusManager:
-    def __init__(self, data_logger, now_provider=None):
+    def __init__(self, data_logger, now_provider=None, config_path="config.json"):
         self.data_logger = data_logger
         self.now_provider = now_provider or datetime.now
+        self.config_path = config_path
         self.current_mode = None
         self.state = FocusState.INACTIVE
         self.start_time = None
@@ -26,10 +28,14 @@ class FocusManager:
         self.total_paused_time = 0
         self.session_data = {}
         
-        # Focus durations in minutes
+        self.reload_config()
+
+    def reload_config(self):
+        """Apply saved focus durations to future sessions."""
+        modes = load_config(self.config_path)['focus_modes']
         self.durations = {
-            FocusMode.DEEP_WORK: 90,
-            FocusMode.QUICK_FOCUS: 25
+            FocusMode.DEEP_WORK: modes['deep_work'],
+            FocusMode.QUICK_FOCUS: modes['quick_focus'],
         }
     
     def start_focus_session(self, mode):
