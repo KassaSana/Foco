@@ -83,6 +83,16 @@ class TestActivityMonitor(unittest.TestCase):
         self.assertEqual(self.logger.cancelled, 1)
         self.assertEqual(len(self.logger.completed), 0)
 
+    def test_midnight_splits_a_session_at_the_day_boundary(self):
+        self.clock.value = datetime(2026, 9, 2, 23, 58)
+        self.monitor.update()
+        self.clock.value = datetime(2026, 9, 3, 0, 2)
+        self.monitor.update()
+
+        self.assertEqual(self.logger.completed[0]['end_time'], '00:00:00')
+        self.assertEqual(self.logger.completed[0]['duration_minutes'], 2.0)
+        self.assertEqual(self.monitor.session_start, self.clock.value)
+
 
 if __name__ == "__main__":
     unittest.main()

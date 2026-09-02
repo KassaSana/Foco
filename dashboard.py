@@ -72,6 +72,8 @@ class ProductivityDashboard:
         self.start_btn.pack(side="left")
         self.stop_btn = ttk.Button(btn_row, text="Stop Session", command=self._stop_focus, state="disabled")
         self.stop_btn.pack(side="left", padx=10)
+        self.pause_btn = ttk.Button(btn_row, text="Pause", command=self._toggle_pause, state="disabled")
+        self.pause_btn.pack(side="left")
 
         # Timer
         self.timer_label = ttk.Label(f, text="00:00", font=("Consolas", 36, "bold"), foreground="#4CAF50")
@@ -105,15 +107,25 @@ class ProductivityDashboard:
             self.focus_manager.start_focus_session(FocusMode.QUICK_FOCUS)
         self.start_btn.config(state='disabled')
         self.stop_btn.config(state='normal')
+        self.pause_btn.config(state='normal', text='Pause')
 
     def _stop_focus(self):
         self.focus_manager.end_current_session()
         self.start_btn.config(state='normal')
         self.stop_btn.config(state='disabled')
+        self.pause_btn.config(state='disabled', text='Pause')
         self.timer_label.config(text="00:00", foreground="#4CAF50")
         self.session_status_label.config(text="No active session")
         if not self._manual_jail_active:
             self.jail_status_label.config(text="Productivity jail inactive")
+
+    def _toggle_pause(self):
+        if self.focus_manager.state.value == 'Running':
+            if self.focus_manager.pause_session():
+                self.pause_btn.config(text='Resume')
+        elif self.focus_manager.state.value == 'Paused':
+            if self.focus_manager.resume_session():
+                self.pause_btn.config(text='Pause')
 
     def _start_manual_jail(self, hours):
         try:
@@ -206,6 +218,7 @@ class ProductivityDashboard:
         if hasattr(self.data_logger, 'save_activity_overrides'):
             try:
                 self.data_logger.save_activity_overrides(rows)
+                self._refresh_activities()
             except Exception as e:
                 import tkinter.messagebox as m
                 m.showerror("Save Failed", str(e))
@@ -374,6 +387,7 @@ class ProductivityDashboard:
         self.root.after(2000, self._start_refresh_loop)
 
     def _update_focus(self):
+        self.focus_manager.update()
         info = self.focus_manager.get_session_info()
         if info:
             remaining = info['remaining_minutes'] * 60
@@ -388,6 +402,10 @@ class ProductivityDashboard:
                 self.jail_status_label.config(text='🔒 Auto jail active (Deep Work)')
             elif not self._manual_jail_active:
                 self.jail_status_label.config(text='Productivity jail inactive')
+            if info['state'] == 'Completed':
+                self.start_btn.config(state='normal')
+                self.stop_btn.config(state='disabled')
+                self.pause_btn.config(state='disabled', text='Pause')
         else:
             self.focus_progress['value'] = 0
 

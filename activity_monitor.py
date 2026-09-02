@@ -79,10 +79,17 @@ class ActivityMonitor:
     
     def update(self):
         """Main update loop - called every second"""
+        current_time = self.now_provider()
+        if self.session_start and current_time.date() != self.session_start.date():
+            midnight = datetime.combine(current_time.date(), datetime.min.time())
+            self.end_current_session(end_at=midnight)
+            self.current_app = None
+            self.current_window_title = ""
+
         idle_seconds = self.idle_seconds_provider()
         if idle_seconds >= self.idle_threshold:
             if not self._idle and self.session_start:
-                idle_started = self.now_provider() - timedelta(seconds=idle_seconds)
+                idle_started = current_time - timedelta(seconds=idle_seconds)
                 self.end_current_session(end_at=idle_started)
                 self.current_app = None
                 self.current_window_title = ""

@@ -2,8 +2,7 @@
 Focus Manager - Focus sessions and timers
 Manages 90min Deep Work and 25min Quick Focus modes
 """
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 
 class FocusMode(Enum):
@@ -17,8 +16,9 @@ class FocusState(Enum):
     COMPLETED = "Completed"
 
 class FocusManager:
-    def __init__(self, data_logger):
+    def __init__(self, data_logger, now_provider=None):
         self.data_logger = data_logger
+        self.now_provider = now_provider or datetime.now
         self.current_mode = None
         self.state = FocusState.INACTIVE
         self.start_time = None
@@ -34,12 +34,12 @@ class FocusManager:
     
     def start_focus_session(self, mode):
         """Start a new focus session with automatic jail mode for Deep Work"""
-        if self.state == FocusState.RUNNING:
+        if self.state in [FocusState.RUNNING, FocusState.PAUSED]:
             self.end_current_session()
         
         self.current_mode = mode
         self.state = FocusState.RUNNING
-        self.start_time = datetime.now()
+        self.start_time = self.now_provider()
         self.pause_time = None
         self.total_paused_time = 0
         
@@ -61,7 +61,7 @@ class FocusManager:
         """Pause the current session"""
         if self.state == FocusState.RUNNING:
             self.state = FocusState.PAUSED
-            self.pause_time = datetime.now()
+            self.pause_time = self.now_provider()
             return True
         return False
     
@@ -69,7 +69,7 @@ class FocusManager:
         """Resume a paused session"""
         if self.state == FocusState.PAUSED and self.pause_time:
             self.state = FocusState.RUNNING
-            self.total_paused_time += (datetime.now() - self.pause_time).total_seconds()
+            self.total_paused_time += (self.now_provider() - self.pause_time).total_seconds()
             self.pause_time = None
             return True
         return False
@@ -77,15 +77,13 @@ class FocusManager:
     def update(self):
         """Update the timer and return current state"""
         if self.state == FocusState.RUNNING:
-            current_time = datetime.now()
+            current_time = self.now_provider()
             
             # Calculate time considering pauses
             elapsed = (current_time - self.start_time).total_seconds() - self.total_paused_time
             remaining = max(0, (self.durations[self.current_mode] * 60) - elapsed)
             
             if remaining <= 0:
-                self._stop_jail_mode()  # Auto-stop jail mode when session completes
-                self.state = FocusState.COMPLETED
                 return self.end_current_session()
             
             # Update session data
@@ -106,7 +104,7 @@ class FocusManager:
             # Always stop jail mode if active when session ends early
             if self.session_data.get('jail_active'):
                 self._stop_jail_mode()
-            end_time = datetime.now()
+            end_time = self.now_provider()
             
             if self.pause_time:  # If paused, add final pause time
                 self.total_paused_time += (end_time - self.pause_time).total_seconds()
@@ -132,10 +130,10 @@ class FocusManager:
     
     def get_remaining_time(self):
         """Get remaining time in current session"""
-        if self.state != FocusState.RUNNING or not self.start_time:
+        if self.state not in [FocusState.RUNNING, FocusState.PAUSED] or not self.start_time:
             return 0
         
-        elapsed = (datetime.now() - self.start_time).total_seconds() - self.total_paused_time
+        elapsed = self.get_elapsed_time()
         target_seconds = self.durations[self.current_mode] * 60
         remaining = max(0, target_seconds - elapsed)
         
@@ -149,7 +147,9 @@ class FocusManager:
         if self.state == FocusState.PAUSED:
             return (self.pause_time - self.start_time).total_seconds() - self.total_paused_time
         elif self.state == FocusState.RUNNING:
-            return (datetime.now() - self.start_time).total_seconds() - self.total_paused_time
+            return (self.now_provider() - self.start_time).total_seconds() - self.total_paused_time
+        elif self.state == FocusState.COMPLETED:
+            return float(self.session_data.get('active_minutes', 0)) * 60
         
         return 0
     
@@ -182,30 +182,24 @@ class FocusManager:
         }
     
     def log_focus_session(self):
-        """Log completed focus session to data logger"""
+        """Persist a completed or stopped focus session."""
         if self.session_data:
-            # Create a focus session entry
-            focus_session = {
-                'type': 'focus_session',
-                'timestamp': datetime.now().isoformat(),
-                'data': self.session_data.copy()
-            }
-            
-            # For now, we'll add it to today's data
-            # In a full implementation, this would be integrated with the data logger
+            self.data_logger.log_focus_session(self.session_data)
             print(f"Focus session completed: {self.session_data['mode']} - "
                   f"{self.session_data.get('active_minutes', 0):.1f}m active")
     
     def get_daily_focus_stats(self):
         """Get today's focus session statistics"""
-        # This would integrate with the data logger to get actual stats
-        # For now, returning placeholder data
+        sessions = self.data_logger.get_focus_sessions()
+        completed = [s for s in sessions if s.get('completion_percentage', 0) >= 100]
+        completion_values = [s.get('completion_percentage', 0) for s in sessions]
         return {
-            'sessions_completed': 0,
-            'total_focus_time': 0,
-            'deep_work_sessions': 0,
-            'quick_focus_sessions': 0,
-            'average_completion': 0
+            'sessions_completed': len(completed),
+            'total_focus_time': round(sum(s.get('active_minutes', 0) for s in sessions), 1),
+            'deep_work_sessions': sum(s.get('mode') == FocusMode.DEEP_WORK.value for s in sessions),
+            'quick_focus_sessions': sum(s.get('mode') == FocusMode.QUICK_FOCUS.value for s in sessions),
+            'average_completion': round(sum(completion_values) / len(completion_values), 1)
+                                  if completion_values else 0,
         }
     
     def _start_jail_mode(self):
