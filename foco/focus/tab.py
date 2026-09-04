@@ -172,7 +172,7 @@ class FocusTab:
         self.focus_manager.update()
         info = self.focus_manager.get_session_info()
         if info:
-            remaining = info["remaining_minutes"] * 60
+            remaining = info["remaining_seconds"]
             time_text = self.focus_manager.format_time(remaining)
             self.timer_label.config(
                 text=time_text,

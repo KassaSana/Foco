@@ -88,7 +88,7 @@ class FocusManager:
             
             # Calculate time considering pauses
             elapsed = (current_time - self.start_time).total_seconds() - self.total_paused_time
-            remaining = max(0, (self.durations[self.current_mode] * 60) - elapsed)
+            remaining = max(0, (self.session_data['duration_minutes'] * 60) - elapsed)
             
             if remaining <= 0:
                 return self.end_current_session()
@@ -124,7 +124,10 @@ class FocusManager:
                 'end_time': end_time.strftime('%H:%M:%S'),
                 'total_minutes': round(total_time / 60, 1),
                 'active_minutes': round(active_time / 60, 1),
-                'completion_percentage': min(100, round((active_time / 60) / self.durations[self.current_mode] * 100))
+                'completion_percentage': (
+                    100 if active_time >= self.session_data['duration_minutes'] * 60
+                    else min(99, round((active_time / 60) / self.session_data['duration_minutes'] * 100))
+                )
             })
             
             # Log the session
@@ -141,7 +144,7 @@ class FocusManager:
             return 0
         
         elapsed = self.get_elapsed_time()
-        target_seconds = self.durations[self.current_mode] * 60
+        target_seconds = self.session_data['duration_minutes'] * 60
         remaining = max(0, target_seconds - elapsed)
         
         return remaining
@@ -166,7 +169,7 @@ class FocusManager:
             return 0
         
         elapsed_minutes = self.get_elapsed_time() / 60
-        target_minutes = self.durations[self.current_mode]
+        target_minutes = self.session_data['duration_minutes']
         
         return min(100, (elapsed_minutes / target_minutes) * 100)
     
@@ -180,8 +183,9 @@ class FocusManager:
             'state': self.state.value,
             'elapsed_minutes': round(self.get_elapsed_time() / 60, 1),
             'remaining_minutes': round(self.get_remaining_time() / 60, 1),
+            'remaining_seconds': self.get_remaining_time(),
             'progress_percentage': round(self.get_progress_percentage(), 1),
-            'target_minutes': self.durations[self.current_mode] if self.current_mode else 0
+            'target_minutes': self.session_data['duration_minutes'] if self.current_mode else 0
         }
     
     def log_focus_session(self):
@@ -199,7 +203,7 @@ class FocusManager:
             self.jail_enforcer = ProductivityEnforcer(
                 data_dir=self.data_dir, config_path=self.config_path
             )
-            duration_hours = self.durations[self.current_mode] / 60
+            duration_hours = self.session_data['duration_minutes'] / 60
             
             if self.jail_enforcer.start_enforcement(duration_hours):
                 self.session_data['jail_active'] = True
