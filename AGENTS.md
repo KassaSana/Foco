@@ -28,3 +28,20 @@
 - Preserve local-data and hosts-file safety behavior.
 - Avoid drive-by refactors, new abstractions, dependency upgrades, and unrelated
   rewrites.
+
+## Coding and commit workflow
+
+- Work in explanatory mode. Before editing, explain the goal, relevant architecture,
+  and proposed approach in language suitable for a junior software engineer.
+- While implementing, give concise progress updates that explain which files are
+  changing, why they belong there, and any important tradeoffs or edge cases.
+- After implementation, explain the main code path, tests, and lessons a junior
+  engineer should take from the change.
+- Keep one feature, fix, or documentation task per commit. Never combine unrelated
+  cleanup or multiple features in the same commit.
+- Run relevant tests and inspect the final diff before committing. Commit completed
+  work automatically once verification passes unless the user asks to review it
+  uncommitted.
+- Use the repository's existing Git author and committer configuration without
+  changing it. Never add `Co-authored-by` trailers or attribution to Codex, Claude,
+  another agent, or any other contributor.
