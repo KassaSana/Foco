@@ -88,16 +88,19 @@ class DataLogger:
 
     def save_today_data(self):
         with self._lock:
-            filename = Path(self.get_today_filename())
-            temp_file = filename.with_suffix('.tmp')
-            try:
-                with open(temp_file, 'w', encoding='utf-8') as file:
-                    json.dump(self.today_data, file, indent=2)
-                temp_file.replace(filename)
-                return True
-            except OSError as e:
-                print(f"Error saving data: {e}")
-                return False
+            return self._save_day_data(self.today_data, self.current_date)
+
+    def _save_day_data(self, data, date_string):
+        filename = Path(self.data_dir) / f"{date_string}.json"
+        temp_file = filename.with_suffix('.tmp')
+        try:
+            with open(temp_file, 'w', encoding='utf-8') as file:
+                json.dump(data, file, indent=2)
+            temp_file.replace(filename)
+            return True
+        except OSError as e:
+            print(f"Error saving data: {e}")
+            return False
 
     def start_session(self, session_data):
         with self._lock:
@@ -187,20 +190,29 @@ class DataLogger:
         if its original records changed, rather than overwriting another edit.
         """
         with self._lock:
-            if date_string != self.now_provider().strftime('%Y-%m-%d'):
-                raise ValueError("The day has changed. Cancel edits to load today's activities.")
             self._rollover_if_needed()
-            current = self.today_data['sessions']
+            today_string = self.now_provider().strftime('%Y-%m-%d')
+            if date_string > today_string:
+                raise ValueError("Future activities cannot be edited.")
+            data = self.today_data if date_string == self.current_date else self._load_date(date_string)
+            current = data['sessions']
             if current[:len(original_sessions)] != original_sessions:
                 raise ValueError("Activities changed. Cancel edits to reload before editing again.")
-            previous_summary = self.today_data['daily_summary'].copy()
-            self.today_data['sessions'] = (
+            previous_summary = data['daily_summary'].copy()
+            data['sessions'] = (
                 json.loads(json.dumps(edited_sessions)) + current[len(original_sessions):]
             )
-            self._recalculate_activity_summary()
-            if not self.save_today_data():
-                self.today_data['sessions'] = current
-                self.today_data['daily_summary'] = previous_summary
+            if data is self.today_data:
+                self._recalculate_activity_summary()
+                saved = self.save_today_data()
+            else:
+                self.today_data = data
+                self._recalculate_activity_summary()
+                saved = self._save_day_data(data, date_string)
+                self.today_data = self._load_date(self.current_date)
+            if not saved:
+                data['sessions'] = current
+                data['daily_summary'] = previous_summary
                 raise OSError("Could not save activities. Your edits are still available; try again.")
 
     def log_focus_session(self, session_data):

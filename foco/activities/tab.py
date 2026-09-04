@@ -1,6 +1,6 @@
 """Activities tab UI and editable timeline actions."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -16,6 +16,14 @@ class ActivitiesTab:
         ttk.Label(header, text="Activities", font=("Segoe UI", 14, "bold")).pack(
             side="left"
         )
+        self.activity_date_var = tk.StringVar(value="Today")
+        ttk.Button(header, text="Previous", command=lambda: self._change_activity_day(-1)).pack(
+            side="right", padx=2
+        )
+        ttk.Button(header, text="Next", command=lambda: self._change_activity_day(1)).pack(
+            side="right", padx=2
+        )
+        ttk.Label(header, textvariable=self.activity_date_var).pack(side="right", padx=8)
         buttons = ttk.Frame(header)
         buttons.pack(side="right")
         ttk.Button(buttons, text="Add", command=self._add_activity).pack(
@@ -52,6 +60,22 @@ class ActivitiesTab:
             font=("Segoe UI", 9),
         )
         self.activity_edit_status.pack(anchor="w")
+        self._refresh_activities()
+
+    def _change_activity_day(self, days):
+        if self._activities_dirty and not messagebox.askyesno(
+            "Discard changes", "Discard unsaved activity changes?"
+        ):
+            return
+        current = datetime.now() if self._activity_snapshot is None else datetime.strptime(
+            self._activity_snapshot['date'], '%Y-%m-%d'
+        )
+        selected = current + timedelta(days=days)
+        if selected.date() > datetime.now().date():
+            return
+        self._activities_dirty = False
+        self._activity_date = selected.strftime('%Y-%m-%d')
+        self.activity_date_var.set(self._activity_date)
         self._refresh_activities()
 
     def _mark_activities_dirty(self):
@@ -170,7 +194,7 @@ class ActivitiesTab:
         if self._editing_activity is not None or self._activities_dirty:
             return
         try:
-            snapshot = self.data_logger.get_day_data()
+            snapshot = self.data_logger.get_day_data(getattr(self, '_activity_date', None))
         except Exception as error:
             self.activity_edit_status.config(text=f"Could not load activities: {error}")
             return

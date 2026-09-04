@@ -84,11 +84,15 @@ class TestActivityStorage(unittest.TestCase):
             self.logger.save_activity_edits(snapshot['date'], snapshot['sessions'], [])
         self.assertEqual(self.logger.get_today_summary()['total_productive'], 10)
 
-    def test_editor_rejects_yesterdays_snapshot(self):
+    def test_editor_can_save_yesterdays_snapshot(self):
+        self.logger.replace_activities([{'label': 'Yesterday', 'duration_minutes': 5}])
         snapshot = self.logger.get_day_data()
         self.clock.value += timedelta(days=1)
-        with self.assertRaisesRegex(ValueError, 'day has changed'):
-            self.logger.save_activity_edits(snapshot['date'], [], [])
+        self.logger.save_activity_edits(snapshot['date'], snapshot['sessions'], [])
+        self.assertEqual(
+            DataLogger(self.temp_dir.name, self.clock.now).get_day_data(snapshot['date'])['sessions'],
+            [],
+        )
 
     def test_failed_editor_save_restores_memory_and_disk(self):
         self.logger.replace_activities([{'label': 'Original', 'duration_minutes': 5}])
