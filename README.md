@@ -59,7 +59,7 @@ config.json               User-editable defaults
 
 The Focus tab starts timed sessions, shows today's distraction-budget usage, and controls Focus Jail. Deep Work starts jail automatically; the shorter Quick Focus mode does not. Reaching the distraction budget offers Quick Focus but never starts blocking automatically.
 
-The Activities tab shows the canonical timeline for the current day. Add, edit, or delete rows and select Save to recalculate the day's statistics from those changes.
+The Activities tab shows the full timeline for the current day. Add, edit, or delete rows and select Save to recalculate the day's statistics, or Cancel to discard unsaved changes. Live table updates pause while editing; tracking continues and newly logged activities are preserved when you save. Pseudo-productive activities are labeled explicitly, and changing their category corrects that classification. If the day changes before saving, cancel edits to load the new day.
 
 The Statistics tab shows category totals and focus-quality metrics across four time ranges.
 

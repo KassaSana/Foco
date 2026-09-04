@@ -94,8 +94,10 @@ class DataLogger:
                 with open(temp_file, 'w', encoding='utf-8') as file:
                     json.dump(self.today_data, file, indent=2)
                 temp_file.replace(filename)
+                return True
             except OSError as e:
                 print(f"Error saving data: {e}")
+                return False
 
     def start_session(self, session_data):
         with self._lock:
@@ -171,6 +173,29 @@ class DataLogger:
             self.today_data["sessions"] = sessions
             self._recalculate_activity_summary()
             self.save_today_data()
+
+    def save_activity_edits(self, date_string, original_sessions, edited_sessions):
+        """Save an editor snapshot while retaining newly logged activities.
+
+        The tracker only appends completed activities. Refuse a stale snapshot
+        if its original records changed, rather than overwriting another edit.
+        """
+        with self._lock:
+            if date_string != self.now_provider().strftime('%Y-%m-%d'):
+                raise ValueError("The day has changed. Cancel edits to load today's activities.")
+            self._rollover_if_needed()
+            current = self.today_data['sessions']
+            if current[:len(original_sessions)] != original_sessions:
+                raise ValueError("Activities changed. Cancel edits to reload before editing again.")
+            previous_summary = self.today_data['daily_summary'].copy()
+            self.today_data['sessions'] = (
+                json.loads(json.dumps(edited_sessions)) + current[len(original_sessions):]
+            )
+            self._recalculate_activity_summary()
+            if not self.save_today_data():
+                self.today_data['sessions'] = current
+                self.today_data['daily_summary'] = previous_summary
+                raise OSError("Could not save activities. Your edits are still available; try again.")
 
     def log_focus_session(self, session_data):
         with self._lock:
