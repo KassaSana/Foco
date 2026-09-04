@@ -39,6 +39,7 @@ class ProductivityDashboard(FocusTab, ActivitiesTab, StatisticsTab, SettingsTab)
 
         self._build_ui()
         self._recover_jail()
+        self.focus_manager.recover_session()
         self._start_refresh_loop()
 
     def _build_ui(self):

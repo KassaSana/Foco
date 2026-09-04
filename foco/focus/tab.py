@@ -205,6 +205,11 @@ class FocusTab:
                 )
             )
             self.focus_progress["value"] = info["progress_percentage"]
+            active = info['state'] in ('Running', 'Paused')
+            self.start_btn.config(state='disabled' if active else 'normal')
+            self.stop_btn.config(state='normal' if active else 'disabled')
+            self.pause_btn.config(state='normal' if active else 'disabled',
+                                  text='Resume' if info['state'] == 'Paused' else 'Pause')
             if info["state"] == "Completed":
                 self.start_btn.config(state="normal")
                 self.stop_btn.config(state="disabled")
@@ -212,6 +217,8 @@ class FocusTab:
         else:
             self.focus_progress["value"] = 0
         self._update_jail_status()
+        if self.focus_manager.persistence_error:
+            self.session_status_label.config(text=self.focus_manager.persistence_error)
 
     def _update_activity(self):
         current = self.activity_monitor.get_current_activity()

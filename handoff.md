@@ -1,5 +1,35 @@
 # Foco implementation handoff
 
+## Resume here — user requested Terra Medium
+
+The user is almost out of usage and explicitly wants to continue in a NEW session
+using GPT-5.6 Terra with medium reasoning. Stop the current expensive-model run
+after saving this handoff and committing the current recovery chunk. No tool is
+available to create a conversation or switch the active model. The user must
+select Terra / Medium and open a new session in this workspace. Do not spawn an
+agent as a substitute for a new session.
+
+Latest implemented chunk: `Restore focus timers after restart` (find hash with
+git log). 68 tests passed, including eight new recovery tests. FocusManager now
+writes focus_state.json in the logger's data directory at transitions, assigns
+stable IDs/history dates, retries failed writes, replays pending completion
+without duplicates, restores running/paused timers, and caps expired sessions
+at their original deadline. Startup recovers blocking before the timer; Focus UI
+restores buttons and displays persistence errors. Missing Deep Work blocking
+recovers the timer paused. No real hosts file or user history used in tests.
+
+NEXT: finish safe shutdown and recovery edge cases before classification. Closing
+the window still exits the daemon blocker without cleanup. Add a clear close flow
+that pauses/saves the timer and removes blocking, refusing silent success when
+cleanup or persistence fails. Consider unsaved activity edits too. Verify with
+mocked UI and temporary data. Also provide a recoverable UI action for corrupt
+focus_state.json (currently preserved and prevents new sessions), validate saved
+pause timestamps/elapsed relationships more fully, and check paused Deep Work
+recovery if stale blocking remains. Desktop appearance has not been inspected.
+
+Then continue ALL items in Remaining scope below. One coherent feature/fix per
+commit, concise messages, existing Git identity, no attribution trailers.
+
 ## Working agreement
 
 Continue all improvements agreed in this conversation. Implement and verify one
@@ -41,10 +71,8 @@ active timer persistence/recovery and safe close behavior.
 Completion storage prerequisite now implemented: log_focus_session accepts an
 optional stable id and history_date, deduplicates retries on that date, atomically
 writes historical/current records, and rolls back in-memory changes on disk errors.
-60 tests pass. Commit: `Make focus history safe to retry`. Session manager has NOT
-yet been wired to assign IDs or checkpoint/recover timers. Next implement that
-integration, including handling the OSError now surfaced by completion storage.
-The attempted combined persistence patch did not apply and changed no files.
+60 tests passed for that prerequisite. Commit: `Make focus history safe to retry`.
+The session manager integration is now implemented as described in Resume here.
 
 1. Reliable focus/blocking lifecycle: one enforcement owner shared by manual and
    Deep Work; explicit pause behavior; truthful start/stop errors; persisted active
@@ -72,10 +100,9 @@ services, dependency upgrades, elaborate analytics, or AI advice.
 
 - Composition root: foco/app.py. UI features are mixins assembled there; feature
   UI modules must not import other feature UI modules.
-- Shared owner and explicit pause semantics are now implemented. Next add active
-  timer persistence/recovery and safe close behavior, with tests for running,
-  paused, expired, interrupted, and failed-cleanup states. Persist the block list
-  snapshot too so recovery doesn't silently adopt changed Settings.
+- Shared owner, explicit pause semantics, rule snapshots, and active timer recovery
+  are implemented. Next finish safe close behavior and the recovery edges listed
+  in Resume here.
 - FocoApp.run finally only flushes activity; active focus sessions are not saved.
   Enforcement is a daemon thread and cannot clean hosts after process exit.
 - Tests mirror features. Full check: python -m unittest discover -s tests -v.

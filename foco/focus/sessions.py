@@ -2,8 +2,12 @@
 Focus Manager - Focus sessions and timers
 Manages 90min Deep Work and 25min Quick Focus modes
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
+import json
+import math
+from pathlib import Path
+from uuid import uuid4
 from ..config import load_config
 
 class FocusMode(Enum):
@@ -31,6 +35,10 @@ class FocusManager:
         self.session_data = {}
         self.jail_enforcer = enforcer
         self.last_error = ''
+        self.persistence_error = ''
+        self.state_file = Path(data_logger.data_dir if data_logger is not None else data_dir) / 'focus_state.json'
+        self._save_pending = False
+        self._completion_pending = False
         
         self.reload_config()
 
@@ -50,6 +58,9 @@ class FocusManager:
             return False
         if self.state in [FocusState.RUNNING, FocusState.PAUSED]:
             self.end_current_session()
+        if self._completion_pending or (self.state == FocusState.INACTIVE and self.state_file.exists()):
+            self.last_error = 'Resolve the saved focus session before starting another.'
+            return False
         
         self.current_mode = mode
         self.state = FocusState.RUNNING
@@ -58,16 +69,26 @@ class FocusManager:
         self.total_paused_time = 0
         
         self.session_data = {
+            'id': uuid4().hex,
             'mode': mode.value,
             'start_time': self.start_time.strftime('%H:%M:%S'),
             'duration_minutes': self.durations[mode],
             'jail_active': False,
         }
         
+        if not self.save_session_state():
+            self.state = FocusState.INACTIVE
+            self._save_pending = False
+            self.last_error = self.persistence_error
+            return False
         # Automatically enable jail mode for Deep Work sessions
         if mode == FocusMode.DEEP_WORK:
             if not self._start_jail_mode():
                 self.state = FocusState.INACTIVE
+                try:
+                    self.state_file.unlink()
+                except OSError as error:
+                    self.persistence_error = f'Could not clear failed session: {error}'
                 return False
         
         return True
@@ -79,6 +100,7 @@ class FocusManager:
                 return False
             self.state = FocusState.PAUSED
             self.pause_time = self.now_provider()
+            self.save_session_state()
             return True
         return False
     
@@ -90,11 +112,16 @@ class FocusManager:
             self.state = FocusState.RUNNING
             self.total_paused_time += (self.now_provider() - self.pause_time).total_seconds()
             self.pause_time = None
+            self.save_session_state()
             return True
         return False
     
     def update(self):
         """Update the timer and return current state"""
+        if self._completion_pending:
+            self._persist_completion()
+        elif self._save_pending:
+            self.save_session_state()
         if self.state == FocusState.RUNNING:
             current_time = self.now_provider()
             
@@ -124,6 +151,11 @@ class FocusManager:
             if self.session_data.get('jail_active'):
                 self._stop_jail_mode()
             end_time = self.now_provider()
+            if self.state == FocusState.RUNNING:
+                deadline = self.start_time + timedelta(
+                    seconds=self.total_paused_time + self.session_data['duration_minutes'] * 60
+                )
+                end_time = min(end_time, deadline)
             
             if self.pause_time:  # If paused, add final pause time
                 self.total_paused_time += (end_time - self.pause_time).total_seconds()
@@ -133,6 +165,7 @@ class FocusManager:
             active_time = total_time - self.total_paused_time
             
             self.session_data.update({
+                'history_date': end_time.strftime('%Y-%m-%d'),
                 'end_time': end_time.strftime('%H:%M:%S'),
                 'total_minutes': round(total_time / 60, 1),
                 'active_minutes': round(active_time / 60, 1),
@@ -142,14 +175,90 @@ class FocusManager:
                 )
             })
             
-            # Log the session
-            self.log_focus_session()
-            
             self.state = FocusState.COMPLETED
+            self._completion_pending = True
+            self._persist_completion()
             return self.session_data.copy()
         
         return None
     
+    def save_session_state(self):
+        """Checkpoint transitions atomically; retry failed writes in update()."""
+        payload = {
+            'state': self.state.value, 'session': self.session_data,
+            'start_time': self.start_time.isoformat(),
+            'pause_time': self.pause_time.isoformat() if self.pause_time else None,
+            'total_paused_time': self.total_paused_time,
+        }
+        try:
+            temporary = self.state_file.with_suffix('.tmp')
+            temporary.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+            temporary.replace(self.state_file)
+            self._save_pending = False
+            self.persistence_error = ''
+            return True
+        except OSError as error:
+            self._save_pending = True
+            self.persistence_error = f'Could not save focus state: {error}. Keep Foco open to retry.'
+            return False
+
+    def _persist_completion(self):
+        # Save the completed record before history so crashes can safely replay it.
+        if not self.save_session_state():
+            return
+        try:
+            self.log_focus_session()
+            self.state_file.unlink()
+            self._completion_pending = False
+            self.persistence_error = ''
+        except OSError as error:
+            self.persistence_error = f'Could not save completed focus: {error}. Keep Foco open to retry.'
+
+    def recover_session(self):
+        """Restore after blocker recovery; never silently run unprotected Deep Work."""
+        if not self.state_file.exists():
+            return False
+        try:
+            payload = json.loads(self.state_file.read_text(encoding='utf-8'))
+            state = FocusState(payload['state'])
+            session = payload['session']
+            mode = FocusMode(session['mode'])
+            target = float(session['duration_minutes'])
+            paused = float(payload['total_paused_time'])
+            started = datetime.fromisoformat(payload['start_time'])
+            pause = datetime.fromisoformat(payload['pause_time']) if payload['pause_time'] else None
+            if (state == FocusState.INACTIVE or not isinstance(session.get('id'), str)
+                    or not session['id'] or not math.isfinite(target) or target <= 0
+                    or not math.isfinite(paused) or paused < 0
+                    or started.tzinfo is not None or started > self.now_provider()
+                    or (pause and (pause.tzinfo is not None or pause < started))
+                    or (state == FocusState.PAUSED and pause is None)):
+                raise ValueError('Invalid saved timer')
+            if state == FocusState.COMPLETED:
+                datetime.strptime(session['history_date'], '%Y-%m-%d')
+                for key in ('active_minutes', 'completion_percentage'):
+                    if not math.isfinite(float(session[key])) or float(session[key]) < 0:
+                        raise ValueError('Invalid completed timer')
+            session['duration_minutes'] = target
+            self.state, self.current_mode = state, mode
+            self.session_data = session
+            self.start_time, self.pause_time = started, pause
+            self.total_paused_time = paused
+            self._completion_pending = state == FocusState.COMPLETED
+            if mode == FocusMode.DEEP_WORK:
+                enforcer = self.get_enforcer()
+                self.session_data['jail_active'] = enforcer.enforcement_active
+                if state == FocusState.RUNNING and self.get_remaining_time() > 0 and not enforcer.enforcement_active:
+                    self.state = FocusState.PAUSED
+                    self.pause_time = self.now_provider()
+                    self.last_error = 'Recovered focus is paused. Resume to restore blocking.'
+                    self.save_session_state()
+            self.update()
+            return True
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as error:
+            self.persistence_error = f'Could not recover focus: {error}. Saved state was preserved.'
+            return False
+
     def get_remaining_time(self):
         """Get remaining time in current session"""
         if self.state not in [FocusState.RUNNING, FocusState.PAUSED] or not self.start_time:
