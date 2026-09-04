@@ -103,7 +103,8 @@ class DataLogger:
         with self._lock:
             self._rollover_if_needed()
             self.current_session = session_data.copy()
-            self.today_data["daily_summary"]["context_switches"] += 1
+            if session_data.get('meaningful_context_switch', False):
+                self.today_data["daily_summary"]["context_switches"] += 1
 
     def cancel_current_session(self):
         with self._lock:
@@ -129,7 +130,10 @@ class DataLogger:
         )}
         summary.update(SUMMARY_DEFAULTS)
         summary.update(focus_values)
-        summary["context_switches"] = len(self.today_data["sessions"])
+        summary["context_switches"] = sum(
+            1 if session.get('meaningful_context_switch', True) else 0
+            for session in self.today_data["sessions"]
+        )
 
         for session in self.today_data["sessions"]:
             try:

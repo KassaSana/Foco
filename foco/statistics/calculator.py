@@ -2,7 +2,7 @@
 Stats Calculator - Historical summaries and analytics
 Generates daily/weekly/monthly/yearly summaries and insights
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class StatsCalculator:
     def __init__(self, data_logger):
@@ -29,15 +29,7 @@ class StatsCalculator:
             pseudo_minutes += float(summary.get('pseudo_productive', 0) or 0)
             context_switches += int(summary.get('context_switches', 0) or 0)
             focus_sessions.extend(day.get('focus_sessions', []))
-            for session in day.get('sessions', []):
-                if (not session.get('is_pseudo_productive', False)
-                        and str(session.get('category', '')).lower() != 'unclassified'):
-                    try:
-                        duration = float(session.get('duration_minutes', 0) or 0)
-                    except (TypeError, ValueError):
-                        duration = 0
-                    if duration > 0:
-                        productive_blocks.append(duration)
+            productive_blocks.extend(self._work_blocks(day.get('sessions', [])))
 
         measured_minutes = productive_minutes + pseudo_minutes
         completed_focus = sum(
@@ -60,6 +52,55 @@ class StatsCalculator:
             'focus_completion_rate': round((completed_focus / len(focus_sessions)) * 100, 1)
                                      if focus_sessions else 0,
         }
+
+    @staticmethod
+    def _clock_value(value):
+        if not value:
+            return None
+        for format_string in ('%H:%M:%S', '%H:%M'):
+            try:
+                parsed = datetime.strptime(str(value), format_string)
+                return parsed.replace(year=2000, month=1, day=1)
+            except ValueError:
+                continue
+        return None
+
+    def _work_blocks(self, sessions):
+        """Merge nearby productive segments, stopping at distractions or idle gaps."""
+        blocks = []
+        current_minutes = 0
+        current_end = None
+        for session in sessions:
+            category = str(session.get('category', '')).lower()
+            productive = (
+                not session.get('is_pseudo_productive', False)
+                and category != 'unclassified'
+            )
+            start = self._clock_value(session.get('start_time'))
+            end = self._clock_value(session.get('end_time'))
+            try:
+                duration = float(session.get('duration_minutes', 0) or 0)
+            except (TypeError, ValueError):
+                duration = 0
+            adjacent = (
+                current_end is not None and start is not None
+                and start >= current_end
+                and start - current_end <= timedelta(minutes=5)
+            )
+            if productive and duration > 0:
+                if current_minutes and not adjacent:
+                    blocks.append(current_minutes)
+                    current_minutes = 0
+                current_minutes += duration
+                current_end = end or (start + timedelta(minutes=duration) if start else None)
+            else:
+                if current_minutes:
+                    blocks.append(current_minutes)
+                    current_minutes = 0
+                current_end = None
+        if current_minutes:
+            blocks.append(current_minutes)
+        return blocks
 
     def build_insights(self, metrics):
         """Create concise, actionable interpretations of the current metrics."""

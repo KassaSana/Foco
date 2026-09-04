@@ -79,14 +79,23 @@ class TestActivityMonitor(unittest.TestCase):
 
         self.assertIn('classification_reason', self.logger.current)
 
-    def test_short_segment_is_cancelled(self):
+    def test_short_segment_is_retained(self):
         self.monitor.update()
         self.clock.value += timedelta(seconds=10)
         self.window[1] = "Another tab"
         self.monitor.update()
 
-        self.assertEqual(self.logger.cancelled, 1)
-        self.assertEqual(len(self.logger.completed), 0)
+        self.assertEqual(self.logger.cancelled, 0)
+        self.assertEqual(len(self.logger.completed), 1)
+        self.assertEqual(self.logger.completed[0]['duration_minutes'], 0.2)
+
+    def test_title_change_is_not_a_meaningful_context_switch(self):
+        self.monitor.update()
+        self.clock.value += timedelta(minutes=2)
+        self.window[1] = "Another document"
+        self.monitor.update()
+
+        self.assertFalse(self.logger.completed[0]['meaningful_context_switch'])
 
     def test_midnight_splits_a_session_at_the_day_boundary(self):
         self.clock.value = datetime(2026, 9, 2, 23, 58)

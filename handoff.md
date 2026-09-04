@@ -151,3 +151,10 @@ Finish actions; the notification is shown once per completed session and another
 session reuses the normal intention prompt and start path. The next remaining
 feature is improved measurement with activity segments, meaningful context
 switches, and grouped work blocks.
+
+Improved measurement is now implemented and verified in 85 tests. Activity
+segments shorter than 30 seconds are retained, title changes remain separate
+segments without inflating meaningful app context switches, and statistics
+groups adjacent productive segments into work blocks bounded by distractions or
+larger idle gaps. The final remaining feature is historical daily navigation,
+correction, and compact daily review.

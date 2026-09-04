@@ -104,12 +104,15 @@ class ActivityMonitor:
                 self.end_current_session()
             
             # Start new session
-            self.start_new_session(app_name, window_title)
+            self.start_new_session(
+                app_name, window_title,
+                meaningful_context_switch=bool(self.current_app and app_name != self.current_app),
+            )
         
         self.current_app = app_name
         self.current_window_title = window_title
     
-    def start_new_session(self, app_name, window_title):
+    def start_new_session(self, app_name, window_title, meaningful_context_switch=False):
         """Start tracking a new application session"""
         self.session_start = self.now_provider()
         category, reason = self.category_engine.classify_activity(app_name, window_title)
@@ -121,6 +124,7 @@ class ActivityMonitor:
             'window_title': window_title,
             'category': category,
             'classification_reason': reason,
+            'meaningful_context_switch': meaningful_context_switch,
             'is_pseudo_productive': self.category_engine.is_pseudo_productive(app_name, window_title)
         }
         
@@ -132,7 +136,7 @@ class ActivityMonitor:
             end_at = max(self.session_start, end_at or self.now_provider())
             duration = (end_at - self.session_start).total_seconds() / 60
             
-            if duration > 0.5:  # Only log sessions longer than 30 seconds
+            if duration > 0:
                 session_data = {
                     'end_time': end_at.strftime('%H:%M:%S'),
                     'duration_minutes': round(duration, 1),

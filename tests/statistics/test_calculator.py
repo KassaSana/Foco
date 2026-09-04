@@ -64,6 +64,42 @@ class TestProductivityMetrics(unittest.TestCase):
         metrics = self.calculator.calculate_daily_stats()['metrics']
         self.assertTrue(self.calculator.build_insights(metrics))
 
+    def test_adjacent_productive_segments_form_one_work_block(self):
+        day = {
+            'daily_summary': {'total_productive': 20, 'pseudo_productive': 0},
+            'focus_sessions': [],
+            'sessions': [
+                {'category': 'Building', 'duration_minutes': 10,
+                 'start_time': '09:00:00', 'end_time': '09:10:00'},
+                {'category': 'Building', 'duration_minutes': 10,
+                 'start_time': '09:10:00', 'end_time': '09:20:00'},
+            ],
+        }
+
+        metrics = self.calculator.calculate_productivity_metrics([day])
+
+        self.assertEqual(metrics['average_work_block'], 20.0)
+        self.assertEqual(metrics['longest_work_block'], 20.0)
+
+    def test_distraction_bounds_work_blocks(self):
+        day = {
+            'daily_summary': {'total_productive': 20, 'pseudo_productive': 5},
+            'focus_sessions': [],
+            'sessions': [
+                {'category': 'Building', 'duration_minutes': 10,
+                 'start_time': '09:00:00', 'end_time': '09:10:00'},
+                {'category': 'pseudo_productive', 'is_pseudo_productive': True,
+                 'duration_minutes': 5, 'start_time': '09:10:00', 'end_time': '09:15:00'},
+                {'category': 'Building', 'duration_minutes': 10,
+                 'start_time': '09:15:00', 'end_time': '09:25:00'},
+            ],
+        }
+
+        metrics = self.calculator.calculate_productivity_metrics([day])
+
+        self.assertEqual(metrics['average_work_block'], 10.0)
+        self.assertEqual(metrics['longest_work_block'], 10.0)
+
 
 if __name__ == '__main__':
     unittest.main()
