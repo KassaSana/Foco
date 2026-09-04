@@ -18,6 +18,19 @@ class FocusTab:
         )
         self.current_activity_label.pack(anchor="w", pady=(0, 8))
 
+        budget_box = ttk.LabelFrame(f, text="Daily Distraction Budget")
+        budget_box.pack(fill="x", pady=(0, 8))
+        self.distraction_budget_label = ttk.Label(
+            budget_box, text="Pseudo-productive time: 0 / 0 min"
+        )
+        self.distraction_budget_label.pack(anchor="w", padx=8, pady=(6, 2))
+        self.distraction_budget_progress = ttk.Progressbar(
+            budget_box, mode="determinate", maximum=100
+        )
+        self.distraction_budget_progress.pack(
+            fill="x", padx=8, pady=(0, 6)
+        )
+
         mode_box = ttk.LabelFrame(f, text="Choose Focus Mode")
         mode_box.pack(fill="x", pady=4)
         self.mode_var = tk.StringVar(value="quick")
@@ -188,5 +201,46 @@ class FocusTab:
         if text != self.last_activity_text:
             self.current_activity_label.config(text=text)
             self.last_activity_text = text
+        self._update_distraction_budget(current)
         if self.notebook.index(self.notebook.select()) == 1:
             self._refresh_activities()
+
+    def _update_distraction_budget(self, current_activity):
+        active_minutes = 0
+        if current_activity and current_activity.get("is_pseudo_productive"):
+            active_minutes = current_activity.get("duration", 0)
+        status = self.distraction_budget.get_status(active_minutes)
+        if not status["enabled"]:
+            self.distraction_budget_label.config(
+                text="Pseudo-productive time: alerts disabled"
+            )
+            self.distraction_budget_progress["value"] = 0
+            return
+
+        self.distraction_budget_label.config(
+            text=(
+                f"Pseudo-productive time: {status['used_minutes']:.1f} / "
+                f"{status['limit_minutes']:g} min"
+            )
+        )
+        self.distraction_budget_progress["value"] = status["progress_percentage"]
+        if not status["should_alert"]:
+            return
+
+        self.distraction_budget.acknowledge_alert()
+        if self.focus_manager.state.value in ("Running", "Paused"):
+            messagebox.showinfo(
+                "Distraction budget reached",
+                "Today's distraction budget has been reached. "
+                "Your focus session is already active.",
+            )
+            return
+        if messagebox.askyesno(
+            "Distraction budget reached",
+            (
+                f"You've used {status['used_minutes']:.1f} minutes of "
+                "pseudo-productive time today. Start Quick Focus?"
+            ),
+        ):
+            self.mode_var.set("quick")
+            self._start_focus()

@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from .activities.tab import ActivitiesTab
 from .activity_tracking.monitor import ActivityMonitor
+from .distraction_budget import DistractionBudget
 from .focus.sessions import FocusManager
 from .focus.tab import FocusTab
 from .settings.tab import SettingsTab
@@ -24,6 +25,7 @@ class ProductivityDashboard(FocusTab, ActivitiesTab, StatisticsTab, SettingsTab)
         self.activity_monitor = activity_monitor
         self.stats_calculator = StatsCalculator(data_logger)
         self.focus_manager = FocusManager(data_logger)
+        self.distraction_budget = DistractionBudget(data_logger)
         self._manual_jail_active = False
         self.last_activity_text = ""
 

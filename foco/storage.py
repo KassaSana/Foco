@@ -43,6 +43,7 @@ class DataLogger:
             "date": date_string,
             "sessions": [],
             "focus_sessions": [],
+            "distraction_budget": {"alerted": False},
             "daily_summary": SUMMARY_DEFAULTS.copy(),
         }
 
@@ -53,6 +54,12 @@ class DataLogger:
             normalized["date"] = date_string
             normalized["sessions"] = list(data.get("sessions", []))
             normalized["focus_sessions"] = list(data.get("focus_sessions", []))
+            budget = data.get("distraction_budget", {})
+            if not isinstance(budget, dict):
+                budget = {}
+            normalized["distraction_budget"] = {
+                "alerted": bool(budget.get("alerted", False))
+            }
             summary = SUMMARY_DEFAULTS.copy()
             summary.update(data.get("daily_summary", {}))
             normalized["daily_summary"] = summary
@@ -188,6 +195,19 @@ class DataLogger:
         with self._lock:
             self._rollover_if_needed()
             return self.today_data["daily_summary"].copy()
+
+    def get_distraction_budget_state(self):
+        """Return today's persisted distraction-budget notification state."""
+        with self._lock:
+            self._rollover_if_needed()
+            return self.today_data["distraction_budget"].copy()
+
+    def mark_distraction_budget_alerted(self):
+        """Prevent repeated budget alerts for the remainder of the current day."""
+        with self._lock:
+            self._rollover_if_needed()
+            self.today_data["distraction_budget"]["alerted"] = True
+            self.save_today_data()
 
     def get_day_data(self, date_string=None):
         """Return an isolated day snapshot for analytics."""

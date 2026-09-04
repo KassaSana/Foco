@@ -21,11 +21,13 @@ class TestConfiguration(unittest.TestCase):
     def test_configuration_is_validated_normalized_and_saved(self):
         config = load_config(self.config_path)
         config['idle_timeout'] = 0
+        config['pseudo_productive_limit'] = -5
         config['blocked_sites'] = ['Example.com', 'example.com', '  social.test  ']
 
         saved = save_config(config, self.config_path)
 
         self.assertEqual(saved['idle_timeout'], 1)
+        self.assertEqual(saved['pseudo_productive_limit'], 0)
         self.assertEqual(saved['blocked_sites'], ['example.com', 'social.test'])
         self.assertEqual(json.loads(self.config_path.read_text())['blocked_sites'],
                          ['example.com', 'social.test'])

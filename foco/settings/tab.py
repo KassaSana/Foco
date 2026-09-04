@@ -19,16 +19,18 @@ class SettingsTab:
             heading, text="Save Settings", command=self._save_settings
         ).pack(side="right")
 
-        timing = ttk.LabelFrame(container, text="Session timing")
+        timing = ttk.LabelFrame(container, text="Timing and limits")
         timing.pack(fill="x", pady=(10, 8))
         self.deep_minutes_var = tk.StringVar()
         self.quick_minutes_var = tk.StringVar()
         self.idle_minutes_var = tk.StringVar()
+        self.pseudo_limit_var = tk.StringVar()
         for column, (label, variable) in enumerate(
             (
                 ("Deep Work (min)", self.deep_minutes_var),
                 ("Quick Focus (min)", self.quick_minutes_var),
                 ("Idle timeout (min)", self.idle_minutes_var),
+                ("Distraction budget (0=off)", self.pseudo_limit_var),
             )
         ):
             ttk.Label(timing, text=label).grid(
@@ -88,6 +90,7 @@ class SettingsTab:
         self.deep_minutes_var.set(str(config["focus_modes"]["deep_work"]))
         self.quick_minutes_var.set(str(config["focus_modes"]["quick_focus"]))
         self.idle_minutes_var.set(str(config["idle_timeout"]))
+        self.pseudo_limit_var.set(str(config["pseudo_productive_limit"]))
         for key, editor in self.settings_texts.items():
             editor.delete("1.0", "end")
             editor.insert("1.0", "\n".join(config[key]))
@@ -100,6 +103,7 @@ class SettingsTab:
                 "quick_focus": int(self.quick_minutes_var.get()),
             }
             config["idle_timeout"] = float(self.idle_minutes_var.get())
+            config["pseudo_productive_limit"] = float(self.pseudo_limit_var.get())
             for key, editor in self.settings_texts.items():
                 values = []
                 for line in editor.get("1.0", "end").splitlines():
@@ -111,6 +115,7 @@ class SettingsTab:
             self.activity_monitor.category_engine.reload_config()
             self.activity_monitor.idle_threshold = config["idle_timeout"] * 60
             self.focus_manager.reload_config()
+            self.distraction_budget.reload_config()
             self._load_settings_form()
             messagebox.showinfo(
                 "Settings saved",

@@ -10,6 +10,7 @@ All activity history stays on the local machine as JSON. Foco has no account, cl
 - Splits browser tabs and document-title changes into separate activity segments.
 - Uses configurable rules to classify time as Building, Studying, Applying, or Knowledge.
 - Flags pseudo-productive activity separately from meaningful work.
+- Tracks a configurable daily distraction budget and suggests Quick Focus when it is reached.
 - Provides Quick Focus and Deep Work timers with pause, resume, and automatic completion.
 - Automatically enables Focus Jail for Deep Work sessions.
 - Blocks configured domains through the Windows hosts file and closes configured applications.
@@ -56,13 +57,13 @@ config.json               User-editable defaults
 
 ## Using the application
 
-The Focus tab starts timed sessions and controls Focus Jail. Deep Work starts jail automatically; the shorter Quick Focus mode does not.
+The Focus tab starts timed sessions, shows today's distraction-budget usage, and controls Focus Jail. Deep Work starts jail automatically; the shorter Quick Focus mode does not. Reaching the distraction budget offers Quick Focus but never starts blocking automatically.
 
 The Activities tab shows the canonical timeline for the current day. Add, edit, or delete rows and select Save to recalculate the day's statistics from those changes.
 
 The Statistics tab shows category totals and focus-quality metrics across four time ranges.
 
-The Settings tab controls session durations, idle timeout, category patterns, pseudo-productivity rules, blocked domains, and blocked executable names. Enter one rule per line. Blocking changes take effect when the next jail starts.
+The Settings tab controls session durations, idle timeout, the daily distraction budget, category patterns, pseudo-productivity rules, blocked domains, and blocked executable names. Set the distraction budget to `0` to disable its alert. Enter one rule per line. Blocking changes take effect when the next jail starts.
 
 ## Local data
 
