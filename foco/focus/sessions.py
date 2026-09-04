@@ -227,18 +227,27 @@ class FocusManager:
             paused = float(payload['total_paused_time'])
             started = datetime.fromisoformat(payload['start_time'])
             pause = datetime.fromisoformat(payload['pause_time']) if payload['pause_time'] else None
+            now = self.now_provider()
+            if started > now or (pause and pause > now):
+                raise ValueError('Saved timer timestamp is in the future')
+            elapsed_until_pause = ((pause or now) - started).total_seconds()
             if (state == FocusState.INACTIVE or not isinstance(session.get('id'), str)
                     or not session['id'] or not math.isfinite(target) or target <= 0
                     or not math.isfinite(paused) or paused < 0
-                    or started.tzinfo is not None or started > self.now_provider()
+                    or started.tzinfo is not None
                     or (pause and (pause.tzinfo is not None or pause < started))
+                    or paused > elapsed_until_pause
                     or (state == FocusState.PAUSED and pause is None)):
                 raise ValueError('Invalid saved timer')
             if state == FocusState.COMPLETED:
                 datetime.strptime(session['history_date'], '%Y-%m-%d')
-                for key in ('active_minutes', 'completion_percentage'):
+                for key in ('active_minutes', 'total_minutes', 'completion_percentage'):
                     if not math.isfinite(float(session[key])) or float(session[key]) < 0:
                         raise ValueError('Invalid completed timer')
+                if float(session['completion_percentage']) > 100:
+                    raise ValueError('Invalid completed timer')
+                if float(session['active_minutes']) > target * 60 + 1:
+                    raise ValueError('Invalid completed timer')
             session['duration_minutes'] = target
             self.state, self.current_mode = state, mode
             self.session_data = session
@@ -257,6 +266,49 @@ class FocusManager:
             return True
         except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as error:
             self.persistence_error = f'Could not recover focus: {error}. Saved state was preserved.'
+            return False
+
+    def shutdown(self):
+        """Checkpoint an active session and remove all blocking before exit."""
+        self.last_error = ''
+        if self.state == FocusState.RUNNING:
+            self.pause_session()
+        if self.state in (FocusState.RUNNING, FocusState.PAUSED):
+            if self._save_pending:
+                self.save_session_state()
+            if self._save_pending:
+                self.last_error = self.persistence_error
+                return False
+        enforcer = self.jail_enforcer
+        if enforcer and (enforcer.enforcement_active or enforcer.has_block_entries()):
+            if not enforcer.stop_enforcement():
+                self.last_error = enforcer.last_error or 'Could not remove blocking. Retry Disable.'
+                return False
+            self.session_data['jail_active'] = False
+        return True
+
+    def discard_saved_session(self):
+        """Remove a saved focus checkpoint after the user confirms recovery is impossible."""
+        enforcer = self.jail_enforcer
+        if enforcer and (enforcer.enforcement_active or enforcer.has_block_entries()):
+            self.last_error = 'Disable blocking before clearing the saved focus session.'
+            return False
+        try:
+            if self.state_file.exists():
+                self.state_file.unlink()
+            self.current_mode = None
+            self.state = FocusState.INACTIVE
+            self.start_time = None
+            self.pause_time = None
+            self.total_paused_time = 0
+            self.session_data = {}
+            self._save_pending = False
+            self._completion_pending = False
+            self.persistence_error = ''
+            self.last_error = ''
+            return True
+        except OSError as error:
+            self.last_error = f'Could not clear saved focus session: {error}'
             return False
 
     def get_remaining_time(self):

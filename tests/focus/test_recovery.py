@@ -102,6 +102,51 @@ class TestFocusRecovery(unittest.TestCase):
         self.assertEqual(restored.state, FocusState.PAUSED)
         self.assertFalse(restored.session_data['jail_active'])
 
+    def test_future_pause_timestamp_is_preserved_as_invalid(self):
+        self.manager.start_focus_session(FocusMode.QUICK_FOCUS)
+        payload = json.loads(self.manager.state_file.read_text())
+        payload['state'] = FocusState.PAUSED.value
+        payload['pause_time'] = (self.now + timedelta(minutes=1)).isoformat()
+        self.manager.state_file.write_text(json.dumps(payload))
+
+        restored = self.new_manager()
+
+        self.assertFalse(restored.recover_session())
+        self.assertIn('future', restored.persistence_error)
+        self.assertTrue(restored.state_file.exists())
+
+    def test_corrupt_saved_session_can_be_cleared(self):
+        self.manager.state_file.write_text('{broken')
+
+        self.assertTrue(self.manager.discard_saved_session())
+        self.assertFalse(self.manager.state_file.exists())
+        self.assertEqual(self.manager.state, FocusState.INACTIVE)
+        self.assertTrue(self.manager.start_focus_session(FocusMode.QUICK_FOCUS))
+
+    def test_shutdown_pauses_timer_and_removes_blocking(self):
+        enforcer = Mock(enforcement_active=False, has_block_entries=Mock(return_value=True))
+        enforcer.last_error = ''
+        enforcer.stop_enforcement.return_value = True
+        manager = FocusManager(
+            DataLogger(self.folder), lambda: self.now, enforcer=enforcer
+        )
+        manager.start_focus_session(FocusMode.QUICK_FOCUS)
+
+        self.assertTrue(manager.shutdown())
+        self.assertEqual(manager.state, FocusState.PAUSED)
+        enforcer.stop_enforcement.assert_called_once_with()
+
+    def test_shutdown_refuses_when_checkpoint_fails(self):
+        manager = self.manager
+        manager.start_focus_session(FocusMode.QUICK_FOCUS)
+        with patch.object(manager, 'save_session_state', return_value=False):
+            manager._save_pending = True
+            manager.persistence_error = 'disk full'
+
+            self.assertFalse(manager.shutdown())
+
+        self.assertIn('disk full', manager.last_error)
+
 
 if __name__ == '__main__':
     unittest.main()

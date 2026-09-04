@@ -54,6 +54,10 @@ class FocusTab:
             btn_row, text="Pause", command=self._toggle_pause, state="disabled"
         )
         self.pause_btn.pack(side="left")
+        self.clear_saved_btn = ttk.Button(
+            btn_row, text="Clear Saved Session", command=self._clear_saved_session
+        )
+        self.clear_saved_btn.pack(side="left", padx=10)
 
         self.timer_label = ttk.Label(
             f, text="00:00", font=("Consolas", 36, "bold"), foreground="#4CAF50"
@@ -120,6 +124,16 @@ class FocusTab:
             else:
                 messagebox.showerror('Could not resume', self.focus_manager.last_error)
         self._update_jail_status()
+
+    def _clear_saved_session(self):
+        if not messagebox.askyesno(
+            "Clear saved session", "Remove the saved focus session so a new one can start?"
+        ):
+            return
+        if self.focus_manager.discard_saved_session():
+            self._update_focus()
+        else:
+            messagebox.showerror("Could not clear session", self.focus_manager.last_error)
 
     def _start_manual_jail(self, hours):
         try:

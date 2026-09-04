@@ -87,6 +87,8 @@ class FocoApp:
             self.activity_monitor,
             self.runtime_paths,
         )
+        self.root.protocol("WM_DELETE_WINDOW", self._close)
+        self._closing = False
         self.monitoring = True
         self.monitor_thread = threading.Thread(
             target=self.start_monitoring, daemon=True
@@ -107,6 +109,26 @@ class FocoApp:
             self.monitoring = False
             self.monitor_thread.join(timeout=2)
             self.activity_monitor.stop()
+
+    def _close(self):
+        """Close only after focus, blocking, and editable activity state are safe."""
+        if self._closing:
+            return
+        if getattr(self.dashboard, '_activities_dirty', False):
+            self.dashboard._cancel_activity_edits()
+            if getattr(self.dashboard, '_activities_dirty', False):
+                return
+        if not self.dashboard.focus_manager.shutdown():
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Could not close Foco",
+                self.dashboard.focus_manager.last_error or
+                "Focus state or blocking could not be saved safely. Retry close.",
+            )
+            return
+        self._closing = True
+        self.monitoring = False
+        self.root.destroy()
 
 
 def main():

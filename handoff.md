@@ -119,3 +119,14 @@ services, dependency upgrades, elaborate analytics, or AI advice.
   improving refresh behavior while implementing daily review, not a standalone
   broad refactor.
 - Existing tests are headless. Desktop UI appearance has not been visually tested.
+
+## Latest continuation
+
+Safe shutdown and recovery edge cases are now implemented. The window close flow
+prompts through the existing activity editor for unsaved changes, checkpoints an
+active focus timer as paused, removes remaining blocking, and keeps the window
+open with an error if persistence or cleanup fails. Focus recovery rejects future
+timestamps and inconsistent pause/completion values. The Focus tab offers a
+confirmed, blocking-aware action to clear a corrupt saved checkpoint. Regression
+coverage brings the full suite to 75 passing tests. Commit this chunk as one
+feature before continuing with honest classification.
