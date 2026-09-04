@@ -3,9 +3,7 @@ App Launcher with Admin Privileges
 Handles UAC prompt and launches the main application with elevated privileges
 """
 import sys
-import os
 import ctypes
-from pathlib import Path
 
 def is_admin():
     """Check if the current process has admin privileges"""
@@ -52,10 +50,6 @@ def main():
     
     print("Running with elevated privileges")
     print("Starting productivity tracker...")
-    
-    # Change to the script directory
-    script_dir = Path(__file__).parent
-    os.chdir(script_dir)
     
     try:
         # Import and run the main application

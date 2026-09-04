@@ -67,7 +67,8 @@ The Settings tab controls session durations, idle timeout, the daily distraction
 
 ## Local data
 
-Foco writes one file per day under `productivity_data/`:
+When running from source, Foco writes one file per day under the repository's
+`productivity_data/` directory:
 
 ```text
 productivity_data/
@@ -75,6 +76,10 @@ productivity_data/
   enforcement_state.json
   hosts_backup.txt
 ```
+
+The packaged executable keeps `config.json` and `productivity_data/` in
+`%LOCALAPPDATA%\Foco` so settings and history survive application restarts and
+executable updates.
 
 Daily files contain activity sessions, focus sessions, and cumulative summaries. Enforcement state allows a live jail to resume after the interface restarts. Foco removes only the hosts-file section it owns and preserves unrelated entries.
 

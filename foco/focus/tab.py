@@ -120,7 +120,10 @@ class FocusTab:
                 "Start Jail", f"Start {hours}h distraction block?"
             ):
                 return
-            self.manual_jail = ProductivityEnforcer()
+            self.manual_jail = ProductivityEnforcer(
+                data_dir=self.runtime_paths.data_dir,
+                config_path=self.runtime_paths.config_file,
+            )
             if self.manual_jail.start_enforcement(hours):
                 self._manual_jail_active = True
                 self.manual_jail.start_monitoring()
@@ -131,7 +134,10 @@ class FocusTab:
     def _recover_jail(self):
         """Resume monitoring a saved jail or remove an expired stale block."""
         try:
-            self.manual_jail = ProductivityEnforcer()
+            self.manual_jail = ProductivityEnforcer(
+                data_dir=self.runtime_paths.data_dir,
+                config_path=self.runtime_paths.config_file,
+            )
             end_time = self.manual_jail.recover_enforcement()
             if end_time:
                 self._manual_jail_active = True
@@ -153,7 +159,10 @@ class FocusTab:
                 self.focus_manager._stop_jail_mode()
             if hasattr(self, "manual_jail"):
                 self.manual_jail.stop_enforcement()
-            ProductivityEnforcer().stop_enforcement()
+            ProductivityEnforcer(
+                data_dir=self.runtime_paths.data_dir,
+                config_path=self.runtime_paths.config_file,
+            ).stop_enforcement()
             self._manual_jail_active = False
             self.jail_status_label.config(text="Productivity jail inactive")
         except Exception as error:

@@ -16,9 +16,9 @@ except ImportError:
 
 class ActivityMonitor:
     def __init__(self, data_logger, window_provider=None, idle_seconds_provider=None,
-                 now_provider=None):
+                 now_provider=None, config_path="config.json"):
         self.data_logger = data_logger
-        self.category_engine = CategoryEngine()
+        self.category_engine = CategoryEngine(config_path)
         self.window_provider = window_provider or self.get_active_window_info
         self.idle_seconds_provider = idle_seconds_provider or self.get_idle_seconds
         self.now_provider = now_provider or datetime.now

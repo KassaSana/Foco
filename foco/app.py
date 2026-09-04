@@ -10,6 +10,7 @@ from .activity_tracking.monitor import ActivityMonitor
 from .distraction_budget import DistractionBudget
 from .focus.sessions import FocusManager
 from .focus.tab import FocusTab
+from .runtime_paths import prepare_runtime_paths
 from .settings.tab import SettingsTab
 from .statistics.calculator import StatsCalculator
 from .statistics.tab import StatisticsTab
@@ -19,13 +20,20 @@ from .storage import DataLogger
 class ProductivityDashboard(FocusTab, ActivitiesTab, StatisticsTab, SettingsTab):
     """Assemble the four feature-owned tabs into one desktop surface."""
 
-    def __init__(self, root, data_logger, activity_monitor):
+    def __init__(self, root, data_logger, activity_monitor, runtime_paths):
         self.root = root
         self.data_logger = data_logger
         self.activity_monitor = activity_monitor
         self.stats_calculator = StatsCalculator(data_logger)
-        self.focus_manager = FocusManager(data_logger)
-        self.distraction_budget = DistractionBudget(data_logger)
+        self.runtime_paths = runtime_paths
+        self.focus_manager = FocusManager(
+            data_logger,
+            config_path=runtime_paths.config_file,
+            data_dir=runtime_paths.data_dir,
+        )
+        self.distraction_budget = DistractionBudget(
+            data_logger, config_path=runtime_paths.config_file
+        )
         self._manual_jail_active = False
         self.last_activity_text = ""
 
@@ -64,13 +72,19 @@ class FocoApp:
     """Own the application window and activity-monitoring thread."""
 
     def __init__(self):
+        self.runtime_paths = prepare_runtime_paths()
         self.root = tk.Tk()
         self.root.title("Foco")
         self.root.geometry("800x600")
-        self.data_logger = DataLogger()
-        self.activity_monitor = ActivityMonitor(self.data_logger)
+        self.data_logger = DataLogger(self.runtime_paths.data_dir)
+        self.activity_monitor = ActivityMonitor(
+            self.data_logger, config_path=self.runtime_paths.config_file
+        )
         self.dashboard = ProductivityDashboard(
-            self.root, self.data_logger, self.activity_monitor
+            self.root,
+            self.data_logger,
+            self.activity_monitor,
+            self.runtime_paths,
         )
         self.monitoring = True
         self.monitor_thread = threading.Thread(

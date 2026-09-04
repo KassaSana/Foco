@@ -86,7 +86,7 @@ class SettingsTab:
         self.settings_texts[key] = editor
 
     def _load_settings_form(self):
-        config = load_config()
+        config = load_config(self.runtime_paths.config_file)
         self.deep_minutes_var.set(str(config["focus_modes"]["deep_work"]))
         self.quick_minutes_var.set(str(config["focus_modes"]["quick_focus"]))
         self.idle_minutes_var.set(str(config["idle_timeout"]))
@@ -97,7 +97,7 @@ class SettingsTab:
 
     def _save_settings(self):
         try:
-            config = load_config()
+            config = load_config(self.runtime_paths.config_file)
             config["focus_modes"] = {
                 "deep_work": int(self.deep_minutes_var.get()),
                 "quick_focus": int(self.quick_minutes_var.get()),
@@ -111,7 +111,7 @@ class SettingsTab:
                         part.strip() for part in line.split(",") if part.strip()
                     )
                 config[key] = values
-            config = save_config(config)
+            config = save_config(config, self.runtime_paths.config_file)
             self.activity_monitor.category_engine.reload_config()
             self.activity_monitor.idle_threshold = config["idle_timeout"] * 60
             self.focus_manager.reload_config()

@@ -17,10 +17,12 @@ class FocusState(Enum):
     COMPLETED = "Completed"
 
 class FocusManager:
-    def __init__(self, data_logger, now_provider=None, config_path="config.json"):
+    def __init__(self, data_logger, now_provider=None, config_path="config.json",
+                 data_dir="productivity_data"):
         self.data_logger = data_logger
         self.now_provider = now_provider or datetime.now
         self.config_path = config_path
+        self.data_dir = data_dir
         self.current_mode = None
         self.state = FocusState.INACTIVE
         self.start_time = None
@@ -194,7 +196,9 @@ class FocusManager:
         try:
             from .blocker import ProductivityEnforcer
             
-            self.jail_enforcer = ProductivityEnforcer()
+            self.jail_enforcer = ProductivityEnforcer(
+                data_dir=self.data_dir, config_path=self.config_path
+            )
             duration_hours = self.durations[self.current_mode] / 60
             
             if self.jail_enforcer.start_enforcement(duration_hours):
