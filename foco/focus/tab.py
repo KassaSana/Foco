@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog, ttk
 
 from .sessions import FocusMode
 
@@ -91,10 +91,13 @@ class FocusTab:
 
     def _start_focus(self):
         mode = self.mode_var.get()
+        intention = simpledialog.askstring(
+            "Focus intention", "What will you focus on? (optional)", parent=self.root
+        )
         if mode == "deep":
-            started = self.focus_manager.start_focus_session(FocusMode.DEEP_WORK)
+            started = self.focus_manager.start_focus_session(FocusMode.DEEP_WORK, intention)
         else:
-            started = self.focus_manager.start_focus_session(FocusMode.QUICK_FOCUS)
+            started = self.focus_manager.start_focus_session(FocusMode.QUICK_FOCUS, intention)
         if not started:
             messagebox.showerror('Focus not started', self.focus_manager.last_error)
             self._update_jail_status()
@@ -104,7 +107,20 @@ class FocusTab:
         self.pause_btn.config(state="normal", text="Pause")
 
     def _stop_focus(self):
-        self.focus_manager.end_current_session()
+        outcome = simpledialog.askstring(
+            "Session outcome", "Outcome: Done, Progress, or Blocked",
+            initialvalue="Progress", parent=self.root
+        )
+        if outcome is None:
+            return
+        note = simpledialog.askstring(
+            "Session note", "Optional note about the outcome", parent=self.root
+        )
+        try:
+            self.focus_manager.end_current_session(outcome, note)
+        except ValueError as error:
+            messagebox.showerror("Invalid outcome", str(error))
+            return
         self.start_btn.config(state="normal")
         self.stop_btn.config(state="disabled")
         self.pause_btn.config(state="disabled", text="Pause")

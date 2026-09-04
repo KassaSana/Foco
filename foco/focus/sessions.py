@@ -50,7 +50,7 @@ class FocusManager:
             FocusMode.QUICK_FOCUS: modes['quick_focus'],
         }
     
-    def start_focus_session(self, mode):
+    def start_focus_session(self, mode, intention=''):
         """Start a new focus session with automatic jail mode for Deep Work"""
         self.last_error = ''
         if self.jail_enforcer and (self.jail_enforcer.enforcement_active or self.jail_enforcer.last_error):
@@ -73,6 +73,7 @@ class FocusManager:
             'mode': mode.value,
             'start_time': self.start_time.strftime('%H:%M:%S'),
             'duration_minutes': self.durations[mode],
+            'intention': str(intention or '').strip(),
             'jail_active': False,
         }
         
@@ -144,9 +145,10 @@ class FocusManager:
         
         return None
     
-    def end_current_session(self):
+    def end_current_session(self, outcome='Progress', outcome_note=''):
         """End the current focus session"""
         if self.state in [FocusState.RUNNING, FocusState.PAUSED]:
+            normalized_outcome = self._normalize_outcome(outcome)
             # Always stop jail mode if active when session ends early
             if self.session_data.get('jail_active'):
                 self._stop_jail_mode()
@@ -172,7 +174,9 @@ class FocusManager:
                 'completion_percentage': (
                     100 if active_time >= self.session_data['duration_minutes'] * 60
                     else min(99, round((active_time / 60) / self.session_data['duration_minutes'] * 100))
-                )
+                ),
+                'outcome': normalized_outcome,
+                'outcome_note': str(outcome_note or '').strip(),
             })
             
             self.state = FocusState.COMPLETED
@@ -181,6 +185,13 @@ class FocusManager:
             return self.session_data.copy()
         
         return None
+
+    @staticmethod
+    def _normalize_outcome(outcome):
+        value = str(outcome or 'Progress').strip().title()
+        if value not in {'Done', 'Progress', 'Blocked'}:
+            raise ValueError('Outcome must be Done, Progress, or Blocked')
+        return value
     
     def save_session_state(self):
         """Checkpoint transitions atomically; retry failed writes in update()."""

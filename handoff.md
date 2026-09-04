@@ -137,3 +137,10 @@ excluded from productive summaries. Browser titles match readable site stems,
 the current activity display shows the reason, and Settings includes a live
 classification preview using the editable app/title rules. The next remaining
 feature is session intention/outcome.
+
+Session intention and outcome are now implemented and verified in 81 tests.
+Focus starts capture an optional intention; stopping a session records Done,
+Progress, or Blocked plus an optional note. Timer completion remains a separate
+completion percentage, and invalid outcomes leave the running session untouched.
+The next remaining feature is completion notification with clear break,
+another-session, and finish actions.

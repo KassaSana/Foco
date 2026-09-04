@@ -94,6 +94,31 @@ class TestFocusSessions(unittest.TestCase):
         self.assertEqual(info['remaining_seconds'], 53)
         self.assertEqual(manager.format_time(info['remaining_seconds']), '00:53')
 
+    def test_intention_and_outcome_are_persisted_separately_from_completion(self):
+        manager = FocusManager(self.logger, self.clock.now)
+        manager.durations[FocusMode.QUICK_FOCUS] = 1
+        manager.start_focus_session(FocusMode.QUICK_FOCUS, 'Finish the draft')
+        self.clock.value += timedelta(seconds=30)
+
+        result = manager.end_current_session('Blocked', 'Waiting for review')
+
+        self.assertEqual(result['intention'], 'Finish the draft')
+        self.assertEqual(result['outcome'], 'Blocked')
+        self.assertEqual(result['outcome_note'], 'Waiting for review')
+        self.assertLess(result['completion_percentage'], 100)
+        history = self.logger.get_focus_sessions()[0]
+        self.assertEqual(history['outcome'], 'Blocked')
+
+    def test_invalid_outcome_does_not_end_session(self):
+        manager = FocusManager(self.logger, self.clock.now)
+        manager.start_focus_session(FocusMode.QUICK_FOCUS)
+
+        with self.assertRaisesRegex(ValueError, 'Outcome'):
+            manager.end_current_session('Maybe')
+
+        self.assertEqual(manager.state, FocusState.RUNNING)
+        self.assertFalse(manager.session_data['jail_active'])
+
 
 if __name__ == '__main__':
     unittest.main()
