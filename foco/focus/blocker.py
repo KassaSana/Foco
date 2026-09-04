@@ -213,7 +213,9 @@ class ProductivityEnforcer:
         state = {
             'active': True,
             'end_time': end_time.isoformat(),
-            'started': datetime.now().isoformat()
+            'started': datetime.now().isoformat(),
+            'blocked_sites': list(self.blocked_sites),
+            'blocked_apps': list(self.blocked_apps),
         }
         
         temp_file = self.state_file.with_suffix('.tmp')
@@ -258,6 +260,25 @@ class ProductivityEnforcer:
         if datetime.now() >= end_time:
             self.enforcement_active = True
             self.stop_enforcement()
+            return None
+
+        # Only live blocks need their rules restored. Legacy state files without
+        # a snapshot continue using the configured rules.
+        try:
+            state = json.loads(self.state_file.read_text(encoding='utf-8'))
+            rules = {}
+            for key in ('blocked_sites', 'blocked_apps'):
+                value = state.get(key, getattr(self, key))
+                if not isinstance(value, list) or any(
+                    not isinstance(item, str) or not item or any(c.isspace() for c in item)
+                    for item in value
+                ):
+                    raise ValueError(f'Invalid saved {key}')
+                rules[key] = list(value)
+            self.blocked_sites = rules['blocked_sites']
+            self.blocked_apps = rules['blocked_apps']
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            self.last_error = f'Could not restore blocking rules: {error}. Retry Disable.'
             return None
 
         self.enforcement_active = True

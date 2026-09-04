@@ -32,6 +32,12 @@ session was opened. No subagents are authorized or needed.
 
 ## Remaining scope (do not mark goal complete until verified)
 
+Latest recovery chunk: enforcement_state.json now includes the original blocked
+apps/sites. Live recovery validates and restores them instead of adopting changed
+Settings. Legacy files use configured rules; expired cleanup ignores invalid rule
+snapshots. Tests cover these paths using temporary hosts files. Next remains
+active timer persistence/recovery and safe close behavior.
+
 1. Reliable focus/blocking lifecycle: one enforcement owner shared by manual and
    Deep Work; explicit pause behavior; truthful start/stop errors; persisted active
    timer and restart recovery; clear safe close behavior. Preserve unrelated hosts
