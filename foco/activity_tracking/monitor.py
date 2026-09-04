@@ -112,7 +112,7 @@ class ActivityMonitor:
     def start_new_session(self, app_name, window_title):
         """Start tracking a new application session"""
         self.session_start = self.now_provider()
-        category = self.category_engine.categorize_activity(app_name, window_title)
+        category, reason = self.category_engine.classify_activity(app_name, window_title)
         
         # Log session start
         session_data = {
@@ -120,6 +120,7 @@ class ActivityMonitor:
             'application': app_name,
             'window_title': window_title,
             'category': category,
+            'classification_reason': reason,
             'is_pseudo_productive': self.category_engine.is_pseudo_productive(app_name, window_title)
         }
         
@@ -153,11 +154,14 @@ class ActivityMonitor:
         """Get current activity information for dashboard"""
         if self.session_start and self.current_app:
             duration = (self.now_provider() - self.session_start).total_seconds() / 60
-            category = self.category_engine.categorize_activity(self.current_app, self.current_window_title)
+            category, reason = self.category_engine.classify_activity(
+                self.current_app, self.current_window_title
+            )
             
             return {
                 'application': self.current_app,
                 'category': category,
+                'classification_reason': reason,
                 'duration': round(duration, 1),
                 'is_pseudo_productive': self.category_engine.is_pseudo_productive(self.current_app, self.current_window_title)
             }

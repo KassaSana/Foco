@@ -239,7 +239,10 @@ class FocusTab:
         if current:
             app = current.get("application") or current.get("window_title", "App")
             category = current.get("category", "")
+            reason = current.get("classification_reason", "")
             text = f"Current Activity: {app}  |  {category}"
+            if reason:
+                text += f" ({reason})"
         else:
             text = "Current Activity: —"
         if text != self.last_activity_text:

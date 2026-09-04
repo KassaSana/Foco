@@ -36,13 +36,33 @@ class TestConfiguration(unittest.TestCase):
         config = load_config(self.config_path)
         save_config(config, self.config_path)
         engine = CategoryEngine(self.config_path)
-        self.assertEqual(engine.categorize_activity('custom.exe', 'Work'), 'Knowledge')
+        self.assertEqual(engine.categorize_activity('custom.exe', 'Work'), 'Unclassified')
 
         config['building_apps'] = ['custom.exe']
         save_config(config, self.config_path)
         engine.reload_config()
 
         self.assertEqual(engine.categorize_activity('custom.exe', 'Work'), 'Building')
+
+    def test_unknown_windows_are_unclassified_with_a_reason(self):
+        config = load_config(self.config_path)
+        save_config(config, self.config_path)
+        engine = CategoryEngine(self.config_path)
+
+        category, reason = engine.classify_activity('chrome.exe', 'A private dashboard')
+
+        self.assertEqual(category, 'Unclassified')
+        self.assertIn('did not match', reason)
+
+    def test_browser_titles_match_readable_site_names(self):
+        config = load_config(self.config_path)
+        save_config(config, self.config_path)
+        engine = CategoryEngine(self.config_path)
+
+        category, reason = engine.classify_activity('chrome.exe', 'YouTube - music video')
+
+        self.assertEqual(category, 'Unclassified')
+        self.assertIn('Pseudo-productive', reason)
 
     def test_enforcer_uses_configured_block_lists(self):
         config = load_config(self.config_path)

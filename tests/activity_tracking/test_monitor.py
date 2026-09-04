@@ -74,6 +74,11 @@ class TestActivityMonitor(unittest.TestCase):
         self.assertEqual(len(self.logger.completed), 1)
         self.assertEqual(self.logger.completed[0]['duration_minutes'], 1.0)
 
+    def test_new_activity_stores_classification_reason(self):
+        self.monitor.update()
+
+        self.assertIn('classification_reason', self.logger.current)
+
     def test_short_segment_is_cancelled(self):
         self.monitor.update()
         self.clock.value += timedelta(seconds=10)

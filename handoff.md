@@ -130,3 +130,10 @@ timestamps and inconsistent pause/completion values. The Focus tab offers a
 confirmed, blocking-aware action to clear a corrupt saved checkpoint. Regression
 coverage brings the full suite to 75 passing tests. Commit this chunk as one
 feature before continuing with honest classification.
+
+Honest classification is now implemented and verified in 79 tests. Unknown
+windows are classified as Unclassified with a stored matching reason and are
+excluded from productive summaries. Browser titles match readable site stems,
+the current activity display shows the reason, and Settings includes a live
+classification preview using the editable app/title rules. The next remaining
+feature is session intention/outcome.

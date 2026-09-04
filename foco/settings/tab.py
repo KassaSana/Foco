@@ -73,7 +73,29 @@ class SettingsTab:
             text="Enter one rule per line. Blocking changes apply when the next jail starts.",
             font=("Segoe UI", 9),
         ).pack(anchor="w", pady=(6, 0))
+        preview = ttk.LabelFrame(container, text="Classification preview")
+        preview.pack(fill="x", pady=(8, 0))
+        self.preview_app_var = tk.StringVar()
+        self.preview_title_var = tk.StringVar()
+        self.preview_result = ttk.Label(preview, text="Enter an app and window title.")
+        ttk.Entry(preview, textvariable=self.preview_app_var, width=24).grid(
+            row=0, column=0, padx=6, pady=6
+        )
+        ttk.Entry(preview, textvariable=self.preview_title_var, width=42).grid(
+            row=0, column=1, padx=6, pady=6
+        )
+        ttk.Button(preview, text="Preview", command=self._preview_classification).grid(
+            row=0, column=2, padx=6, pady=6
+        )
+        ttk.Label(preview, text="App/process").grid(row=1, column=0)
+        ttk.Label(preview, text="Window title").grid(row=1, column=1, sticky="w")
         self._load_settings_form()
+
+    def _preview_classification(self):
+        category, reason = self.activity_monitor.category_engine.classify_activity(
+            self.preview_app_var.get(), self.preview_title_var.get()
+        )
+        self.preview_result.config(text=f"{category}: {reason}")
 
     def _add_rule_editor(self, parent, label, key, row, height=3):
         frame = ttk.Frame(parent)

@@ -30,7 +30,8 @@ class StatsCalculator:
             context_switches += int(summary.get('context_switches', 0) or 0)
             focus_sessions.extend(day.get('focus_sessions', []))
             for session in day.get('sessions', []):
-                if not session.get('is_pseudo_productive', False):
+                if (not session.get('is_pseudo_productive', False)
+                        and str(session.get('category', '')).lower() != 'unclassified'):
                     try:
                         duration = float(session.get('duration_minutes', 0) or 0)
                     except (TypeError, ValueError):

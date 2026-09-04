@@ -140,6 +140,8 @@ class DataLogger:
             pseudo = session.get('is_pseudo_productive', False) or category == 'pseudo_productive'
             if pseudo:
                 summary["pseudo_productive"] += duration
+            elif category == 'unclassified':
+                continue
             else:
                 if category not in ("building", "studying", "applying", "knowledge"):
                     category = "knowledge"

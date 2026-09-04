@@ -51,6 +51,17 @@ class TestActivityStorage(unittest.TestCase):
         self.assertTrue((Path(self.temp_dir.name) / '2026-09-02.json').exists())
         self.assertEqual(self.logger.current_date, '2026-09-03')
 
+    def test_unclassified_activity_is_excluded_from_productive_summary(self):
+        self.logger.replace_activities([
+            {'label': 'Unknown', 'category': 'Unclassified', 'duration_minutes': 20},
+            {'label': 'Code', 'category': 'Building', 'duration_minutes': 10},
+        ])
+
+        summary = self.logger.get_today_summary()
+
+        self.assertEqual(summary['total_productive'], 10)
+        self.assertEqual(summary['building'], 10)
+
     def test_editor_save_preserves_new_tracking_and_focus_history(self):
         self.logger.replace_activities([{'label': 'Original', 'duration_minutes': 5}])
         snapshot = self.logger.get_day_data()

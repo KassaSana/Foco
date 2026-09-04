@@ -18,61 +18,80 @@ class CategoryEngine:
         self.pseudo_productive_sites = self.config.get('pseudo_productive_sites', [])
         return self.config
     
-    def categorize_activity(self, app_name, window_title):
-        """Categorize an activity into Building/Studying/Applying/Knowledge"""
-        app_name_lower = app_name.lower()
-        window_title_lower = window_title.lower()
-        
-        # Building - Coding, development tools
-        if any(app in app_name_lower or app in window_title_lower for app in self.building_apps):
-            return 'Building'
-        
-        # Terminal/command line work
+    @staticmethod
+    def _pattern_matches(pattern, *values):
+        pattern = str(pattern).lower().strip()
+        if not pattern:
+            return False
+        stem = pattern.rsplit('/', 1)[-1]
+        if '.' in stem:
+            stem = stem.rsplit('.', 1)[0]
+        return any(pattern in value or (stem and stem in value) for value in values)
+
+    def classify_activity(self, app_name, window_title):
+        """Return a category and a human-readable reason for the match."""
+        app_name_lower = str(app_name or '').lower()
+        window_title_lower = str(window_title or '').lower()
+        values = (app_name_lower, window_title_lower)
+
+        for pattern in self.building_apps:
+            if self._pattern_matches(pattern, *values):
+                return 'Building', f'Building rule matched: {pattern}'
         if any(term in app_name_lower for term in ['cmd', 'powershell', 'terminal', 'git']):
-            return 'Building'
-        
-        # Studying - Educational content, PDFs, notes
-        if any(app in app_name_lower or app in window_title_lower for app in self.studying_apps):
-            return 'Studying'
-        
-        if any(keyword in window_title_lower for keyword in ['canvas', 'coursera', 'udemy', 'khan academy']):
-            return 'Studying'
-        
-        # Applying - Job search, LinkedIn, career sites
+            return 'Building', 'Terminal or Git application'
+
+        for pattern in self.studying_apps:
+            if self._pattern_matches(pattern, *values):
+                return 'Studying', f'Studying rule matched: {pattern}'
+        for keyword in ['canvas', 'coursera', 'udemy', 'khan academy']:
+            if keyword in window_title_lower:
+                return 'Studying', f'Educational title matched: {keyword}'
+
+        for pattern in self.applying_sites:
+            if self._pattern_matches(pattern, *values):
+                return 'Applying', f'Applying rule matched: {pattern}'
         if 'linkedin' in window_title_lower or 'linkedin' in app_name_lower:
-            if any(keyword in window_title_lower for keyword in ['job', 'career', 'apply', 'resume']):
-                return 'Applying'
-        
-        if any(site in window_title_lower or site in app_name_lower for site in self.applying_sites):
-            return 'Applying'
-        
-        # Browser-based categorization
+            for keyword in ['job', 'career', 'apply', 'resume']:
+                if keyword in window_title_lower:
+                    return 'Applying', f'Job-search title matched: {keyword}'
+
         if any(browser in app_name_lower for browser in ['chrome', 'firefox', 'edge', 'browser']):
-            return self.categorize_browser_activity(window_title_lower)
-        
-        # Default to Knowledge Building
-        return 'Knowledge'
+            return self._classify_browser_activity(window_title_lower)
+
+        return 'Unclassified', 'No classification rule matched'
+
+    def categorize_activity(self, app_name, window_title):
+        """Categorize an activity, retaining the historical string API."""
+        return self.classify_activity(app_name, window_title)[0]
     
     def categorize_browser_activity(self, window_title):
+        """Categorize a browser title, retaining the historical string API."""
+        return self._classify_browser_activity(str(window_title or '').lower())[0]
+
+    def _classify_browser_activity(self, window_title):
         """Categorize browser activity based on window title/URL"""
         # Job application sites
-        if any(site in window_title for site in self.applying_sites):
-            return 'Applying'
+        for site in self.applying_sites:
+            if self._pattern_matches(site, window_title):
+                return 'Applying', f'Applying browser title matched: {site}'
         
         # Educational sites
         educational_sites = ['stackoverflow.com', 'github.com', 'documentation', 'tutorial', 'learn']
-        if any(site in window_title for site in educational_sites):
-            return 'Knowledge'
+        for site in educational_sites:
+            if site in window_title:
+                return 'Knowledge', f'Knowledge browser title matched: {site}'
         
         # Programming/development
-        if any(keyword in window_title for keyword in ['github', 'gitlab', 'bitbucket', 'code']):
-            return 'Building'
+        for keyword in ['github', 'gitlab', 'bitbucket', 'code']:
+            if keyword in window_title:
+                return 'Building', f'Building browser title matched: {keyword}'
         
         # Social media and distractions
-        if any(site in window_title for site in self.pseudo_productive_sites):
-            return 'Knowledge'  # Will be flagged as pseudo-productive
-        
-        return 'Knowledge'
+        for site in self.pseudo_productive_sites:
+            if self._pattern_matches(site, window_title):
+                return 'Unclassified', f'Pseudo-productive title matched: {site}'
+
+        return 'Unclassified', 'Browser title did not match a classification rule'
     
     def is_pseudo_productive(self, app_name, window_title):
         """Detect if current activity is pseudo-productive"""
@@ -87,7 +106,7 @@ class CategoryEngine:
                 return True
         
         # Social media sites
-        if any(site in window_title_lower or site in app_name_lower
+        if any(self._pattern_matches(site, app_name_lower, window_title_lower)
                for site in self.pseudo_productive_sites):
             return True
         
