@@ -144,3 +144,10 @@ Progress, or Blocked plus an optional note. Timer completion remains a separate
 completion percentage, and invalid outcomes leave the running session untouched.
 The next remaining feature is completion notification with clear break,
 another-session, and finish actions.
+
+Completion notification is now implemented and verified in 82 tests. A completed
+timer opens a small Focus-tab window with Take a break, Another session, and
+Finish actions; the notification is shown once per completed session and another
+session reuses the normal intention prompt and start path. The next remaining
+feature is improved measurement with activity segments, meaningful context
+switches, and grouped work blocks.

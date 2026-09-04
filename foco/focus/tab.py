@@ -58,6 +58,8 @@ class FocusTab:
             btn_row, text="Clear Saved Session", command=self._clear_saved_session
         )
         self.clear_saved_btn.pack(side="left", padx=10)
+        self._completion_session_id = None
+        self._completion_window = None
 
         self.timer_label = ttk.Label(
             f, text="00:00", font=("Consolas", 36, "bold"), foreground="#4CAF50"
@@ -121,12 +123,53 @@ class FocusTab:
         except ValueError as error:
             messagebox.showerror("Invalid outcome", str(error))
             return
+        self._reset_focus_controls()
+        self._update_jail_status()
+
+    def _reset_focus_controls(self):
         self.start_btn.config(state="normal")
         self.stop_btn.config(state="disabled")
         self.pause_btn.config(state="disabled", text="Pause")
         self.timer_label.config(text="00:00", foreground="#4CAF50")
         self.session_status_label.config(text="No active session")
-        self._update_jail_status()
+
+    def _show_completion_notification(self):
+        session_id = self.focus_manager.session_data.get('id')
+        if not session_id or session_id == self._completion_session_id:
+            return
+        self._completion_session_id = session_id
+        window = tk.Toplevel(self.root)
+        self._completion_window = window
+        window.title("Focus session complete")
+        window.transient(self.root)
+        ttk.Label(
+            window, text="Your focus session is complete.", font=("Segoe UI", 12, "bold")
+        ).pack(padx=18, pady=(16, 4))
+        ttk.Label(window, text="Choose what to do next.").pack(padx=18, pady=(0, 12))
+        actions = ttk.Frame(window)
+        actions.pack(padx=12, pady=(0, 14))
+        ttk.Button(
+            actions, text="Take a break", command=lambda: self._finish_completion("break")
+        ).pack(side="left", padx=4)
+        ttk.Button(
+            actions, text="Another session", command=lambda: self._finish_completion("another")
+        ).pack(side="left", padx=4)
+        ttk.Button(
+            actions, text="Finish", command=lambda: self._finish_completion("finish")
+        ).pack(side="left", padx=4)
+
+    def _finish_completion(self, action):
+        if self._completion_window is not None:
+            self._completion_window.destroy()
+            self._completion_window = None
+        if action == "another":
+            self._reset_focus_controls()
+            self._start_focus()
+        elif action == "break":
+            self._reset_focus_controls()
+            self.session_status_label.config(text="Take a break, then start another session when ready.")
+        else:
+            self._reset_focus_controls()
 
     def _toggle_pause(self):
         if self.focus_manager.state.value == "Running":
@@ -244,6 +287,7 @@ class FocusTab:
                 self.start_btn.config(state="normal")
                 self.stop_btn.config(state="disabled")
                 self.pause_btn.config(state="disabled", text="Pause")
+                self._show_completion_notification()
         else:
             self.focus_progress["value"] = 0
         self._update_jail_status()

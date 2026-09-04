@@ -110,6 +110,19 @@ class TestBlockingLifecycle(unittest.TestCase):
         self.assertEqual(stop.call_count, 2)
         processes.assert_not_called()
 
+    def test_completion_actions_can_start_another_session(self):
+        tab = FocusTab()
+        completion_window = Mock()
+        tab._completion_window = completion_window
+        tab._reset_focus_controls = Mock()
+        tab._start_focus = Mock()
+
+        tab._finish_completion('another')
+
+        completion_window.destroy.assert_called_once_with()
+        tab._reset_focus_controls.assert_called_once_with()
+        tab._start_focus.assert_called_once_with()
+
 
 if __name__ == '__main__':
     unittest.main()
