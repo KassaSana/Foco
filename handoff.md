@@ -38,6 +38,14 @@ Settings. Legacy files use configured rules; expired cleanup ignores invalid rul
 snapshots. Tests cover these paths using temporary hosts files. Next remains
 active timer persistence/recovery and safe close behavior.
 
+Completion storage prerequisite now implemented: log_focus_session accepts an
+optional stable id and history_date, deduplicates retries on that date, atomically
+writes historical/current records, and rolls back in-memory changes on disk errors.
+60 tests pass. Commit: `Make focus history safe to retry`. Session manager has NOT
+yet been wired to assign IDs or checkpoint/recover timers. Next implement that
+integration, including handling the OSError now surfaced by completion storage.
+The attempted combined persistence patch did not apply and changed no files.
+
 1. Reliable focus/blocking lifecycle: one enforcement owner shared by manual and
    Deep Work; explicit pause behavior; truthful start/stop errors; persisted active
    timer and restart recovery; clear safe close behavior. Preserve unrelated hosts

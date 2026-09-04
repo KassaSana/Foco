@@ -201,15 +201,32 @@ class DataLogger:
         with self._lock:
             self._rollover_if_needed()
             record = session_data.copy()
+            date_string = record.get('history_date', self.current_date)
+            datetime.strptime(date_string, '%Y-%m-%d')
+            if len(date_string) != 10:
+                raise ValueError('Invalid focus history date')
+            data = self.today_data if date_string == self.current_date else self._load_date(date_string)
+            if record.get('id') and any(item.get('id') == record['id'] for item in data['focus_sessions']):
+                return
             record.setdefault('timestamp', self.now_provider().isoformat())
-            self.today_data["focus_sessions"].append(record)
-            summary = self.today_data["daily_summary"]
             active_minutes = float(record.get('active_minutes', 0) or 0)
+            completed = float(record.get('completion_percentage', 0) or 0) >= 100
+            previous = data['daily_summary'].copy()
+            data["focus_sessions"].append(record)
+            summary = data["daily_summary"]
             summary["focus_minutes"] += active_minutes
             summary["focus_sessions"] += 1
-            if float(record.get('completion_percentage', 0) or 0) >= 100:
+            if completed:
                 summary["focus_sessions_completed"] += 1
-            self.save_today_data()
+            try:
+                filename = Path(self.data_dir) / f'{date_string}.json'
+                temporary = filename.with_suffix('.tmp')
+                temporary.write_text(json.dumps(data, indent=2), encoding='utf-8')
+                temporary.replace(filename)
+            except OSError:
+                data['focus_sessions'].pop()
+                data['daily_summary'] = previous
+                raise
 
     def get_focus_sessions(self):
         with self._lock:
