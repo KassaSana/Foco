@@ -4,8 +4,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from .blocker import ProductivityEnforcer
-from .sessions import FocusManager, FocusMode
+from .sessions import FocusMode
 
 
 class FocusTab:
@@ -89,9 +88,13 @@ class FocusTab:
     def _start_focus(self):
         mode = self.mode_var.get()
         if mode == "deep":
-            self.focus_manager.start_focus_session(FocusMode.DEEP_WORK)
+            started = self.focus_manager.start_focus_session(FocusMode.DEEP_WORK)
         else:
-            self.focus_manager.start_focus_session(FocusMode.QUICK_FOCUS)
+            started = self.focus_manager.start_focus_session(FocusMode.QUICK_FOCUS)
+        if not started:
+            messagebox.showerror('Focus not started', self.focus_manager.last_error)
+            self._update_jail_status()
+            return
         self.start_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
         self.pause_btn.config(state="normal", text="Pause")
@@ -103,41 +106,45 @@ class FocusTab:
         self.pause_btn.config(state="disabled", text="Pause")
         self.timer_label.config(text="00:00", foreground="#4CAF50")
         self.session_status_label.config(text="No active session")
-        if not self._manual_jail_active:
-            self.jail_status_label.config(text="Productivity jail inactive")
+        self._update_jail_status()
 
     def _toggle_pause(self):
         if self.focus_manager.state.value == "Running":
             if self.focus_manager.pause_session():
                 self.pause_btn.config(text="Resume")
+            else:
+                messagebox.showerror('Could not pause', self.focus_manager.last_error)
         elif self.focus_manager.state.value == "Paused":
             if self.focus_manager.resume_session():
                 self.pause_btn.config(text="Pause")
+            else:
+                messagebox.showerror('Could not resume', self.focus_manager.last_error)
+        self._update_jail_status()
 
     def _start_manual_jail(self, hours):
         try:
+            if self.focus_manager.state.value in ('Running', 'Paused'):
+                messagebox.showerror('Focus active', 'Finish the focus session before starting a manual block.')
+                return
             if not messagebox.askyesno(
                 "Start Jail", f"Start {hours}h distraction block?"
             ):
                 return
-            self.manual_jail = ProductivityEnforcer(
-                data_dir=self.runtime_paths.data_dir,
-                config_path=self.runtime_paths.config_file,
-            )
+            self.manual_jail = self.focus_manager.get_enforcer()
             if self.manual_jail.start_enforcement(hours):
                 self._manual_jail_active = True
                 self.manual_jail.start_monitoring()
                 self.jail_status_label.config(text=f"Focus jail active ({hours}h)")
+            else:
+                messagebox.showerror('Blocking not started', self.manual_jail.last_error)
+            self._update_jail_status()
         except Exception as error:
             messagebox.showerror("Error", f"Failed to start jail: {error}")
 
     def _recover_jail(self):
         """Resume monitoring a saved jail or remove an expired stale block."""
         try:
-            self.manual_jail = ProductivityEnforcer(
-                data_dir=self.runtime_paths.data_dir,
-                config_path=self.runtime_paths.config_file,
-            )
+            self.manual_jail = self.focus_manager.get_enforcer()
             end_time = self.manual_jail.recover_enforcement()
             if end_time:
                 self._manual_jail_active = True
@@ -148,25 +155,38 @@ class FocusTab:
                 self.jail_status_label.config(
                     text=f"Focus jail restored ({remaining}m remaining)"
                 )
+            self._update_jail_status()
         except Exception as error:
-            print(f"Could not recover productivity jail: {error}")
+            self.jail_status_label.config(text=f'Could not recover blocking: {error}')
 
     def _disable_all_jail(self):
         try:
             if not messagebox.askyesno("Disable", "Disable all blocking?"):
                 return
-            if hasattr(self.focus_manager, "jail_enforcer"):
-                self.focus_manager._stop_jail_mode()
-            if hasattr(self, "manual_jail"):
-                self.manual_jail.stop_enforcement()
-            ProductivityEnforcer(
-                data_dir=self.runtime_paths.data_dir,
-                config_path=self.runtime_paths.config_file,
-            ).stop_enforcement()
-            self._manual_jail_active = False
-            self.jail_status_label.config(text="Productivity jail inactive")
+            enforcer = self.focus_manager.get_enforcer()
+            if enforcer.stop_enforcement():
+                self.focus_manager.session_data['jail_active'] = False
+                self.focus_manager.last_error = ''
+                self._manual_jail_active = False
+            else:
+                messagebox.showerror('Disable failed', enforcer.last_error)
+            self._update_jail_status()
         except Exception as error:
             messagebox.showerror("Error", f"Disable failed: {error}")
+
+    def _update_jail_status(self):
+        enforcer = self.focus_manager.get_enforcer()
+        if enforcer.last_error:
+            text = enforcer.last_error
+        elif enforcer.enforcement_active:
+            end = enforcer.load_enforcement_state()
+            remaining = max(0, int((end - datetime.now()).total_seconds() / 60)) if end else 0
+            text = f'Focus jail active ({remaining}m remaining)'
+        else:
+            self._manual_jail_active = False
+            self.focus_manager.session_data['jail_active'] = False
+            text = 'Productivity jail inactive'
+        self.jail_status_label.config(text=text)
 
     def _update_focus(self):
         self.focus_manager.update()
@@ -185,19 +205,13 @@ class FocusTab:
                 )
             )
             self.focus_progress["value"] = info["progress_percentage"]
-            if (
-                info["mode"] == "Deep Work"
-                and self.focus_manager.session_data.get("jail_active")
-            ):
-                self.jail_status_label.config(text="Focus jail active (Deep Work)")
-            elif not self._manual_jail_active:
-                self.jail_status_label.config(text="Productivity jail inactive")
             if info["state"] == "Completed":
                 self.start_btn.config(state="normal")
                 self.stop_btn.config(state="disabled")
                 self.pause_btn.config(state="disabled", text="Pause")
         else:
             self.focus_progress["value"] = 0
+        self._update_jail_status()
 
     def _update_activity(self):
         current = self.activity_monitor.get_current_activity()

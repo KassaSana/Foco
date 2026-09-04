@@ -22,6 +22,13 @@ session was opened. No subagents are authorized or needed.
   changes; expose seconds directly to the timer; do not count an early stop as
   100% completion through rounding. All 43 tests passed. Commit message:
   `Keep focus timers stable when settings change`. Next: lifecycle item 1 below.
+- Blocking ownership/error chunk: shared lazy enforcer owned by FocusManager;
+  manual blocks cannot overlap focus sessions; pause releases Deep Work blocking,
+  resume reapplies it for remaining time. Start/pause/resume failures preserve
+  timer state; failed cleanup remains visible with Disable retry. Block state
+  save failure rolls back hosts changes. Expired monitors retry cleanup without
+  terminating applications. 52 tests passed before final diff review. Commit:
+  `Unify focus blocking and report failures`. Lifecycle item 1 is still incomplete.
 
 ## Remaining scope (do not mark goal complete until verified)
 
@@ -51,13 +58,10 @@ services, dependency upgrades, elaborate analytics, or AI advice.
 
 - Composition root: foco/app.py. UI features are mixins assembled there; feature
   UI modules must not import other feature UI modules.
-- foco/focus/sessions.py currently creates an enforcer per Deep Work;
-  foco/focus/tab.py creates manual/recovery enforcers sharing enforcement_state.json.
-  Consolidate ownership before adding more session state.
-- _stop_jail_mode currently ignores stop_enforcement() returning False.
-  UI also reports inactive regardless of failures. Fix both in lifecycle chunk.
-- Blocking expiry uses wall-clock time and continues through session pause. Decide
-  and document consistent behavior; avoid unlimited stale hosts rules on shutdown.
+- Shared owner and explicit pause semantics are now implemented. Next add active
+  timer persistence/recovery and safe close behavior, with tests for running,
+  paused, expired, interrupted, and failed-cleanup states. Persist the block list
+  snapshot too so recovery doesn't silently adopt changed Settings.
 - FocoApp.run finally only flushes activity; active focus sessions are not saved.
   Enforcement is a daemon thread and cannot clean hosts after process exit.
 - Tests mirror features. Full check: python -m unittest discover -s tests -v.

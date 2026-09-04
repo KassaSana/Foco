@@ -18,7 +18,7 @@ class FocusState(Enum):
 
 class FocusManager:
     def __init__(self, data_logger, now_provider=None, config_path="config.json",
-                 data_dir="productivity_data"):
+                 data_dir="productivity_data", enforcer=None):
         self.data_logger = data_logger
         self.now_provider = now_provider or datetime.now
         self.config_path = config_path
@@ -29,6 +29,8 @@ class FocusManager:
         self.pause_time = None
         self.total_paused_time = 0
         self.session_data = {}
+        self.jail_enforcer = enforcer
+        self.last_error = ''
         
         self.reload_config()
 
@@ -42,6 +44,10 @@ class FocusManager:
     
     def start_focus_session(self, mode):
         """Start a new focus session with automatic jail mode for Deep Work"""
+        self.last_error = ''
+        if self.jail_enforcer and (self.jail_enforcer.enforcement_active or self.jail_enforcer.last_error):
+            self.last_error = 'Disable the existing block before starting a new focus session.'
+            return False
         if self.state in [FocusState.RUNNING, FocusState.PAUSED]:
             self.end_current_session()
         
@@ -60,13 +66,17 @@ class FocusManager:
         
         # Automatically enable jail mode for Deep Work sessions
         if mode == FocusMode.DEEP_WORK:
-            self._start_jail_mode()
+            if not self._start_jail_mode():
+                self.state = FocusState.INACTIVE
+                return False
         
         return True
     
     def pause_session(self):
         """Pause the current session"""
         if self.state == FocusState.RUNNING:
+            if self.session_data.get('jail_active') and not self._stop_jail_mode():
+                return False
             self.state = FocusState.PAUSED
             self.pause_time = self.now_provider()
             return True
@@ -75,6 +85,8 @@ class FocusManager:
     def resume_session(self):
         """Resume a paused session"""
         if self.state == FocusState.PAUSED and self.pause_time:
+            if self.current_mode == FocusMode.DEEP_WORK and not self._start_jail_mode():
+                return False
             self.state = FocusState.RUNNING
             self.total_paused_time += (self.now_provider() - self.pause_time).total_seconds()
             self.pause_time = None
@@ -198,34 +210,53 @@ class FocusManager:
     def _start_jail_mode(self):
         """Start productivity jail mode"""
         try:
-            from .blocker import ProductivityEnforcer
+            enforcer = self.get_enforcer()
+            duration_hours = self.get_remaining_time() / 3600
             
-            self.jail_enforcer = ProductivityEnforcer(
-                data_dir=self.data_dir, config_path=self.config_path
-            )
-            duration_hours = self.session_data['duration_minutes'] / 60
-            
-            if self.jail_enforcer.start_enforcement(duration_hours):
+            if enforcer.start_enforcement(duration_hours):
                 self.session_data['jail_active'] = True
                 print(f"Focus jail active for {duration_hours:.1f} hours")
                 # Start enforcement monitoring loop in background
                 try:
                     self.jail_enforcer.start_monitoring()
                 except Exception as mt_err:
-                    print(f"Failed to start jail monitor thread: {mt_err}")
+                    self._stop_jail_mode()
+                    self.last_error = f'Could not start blocking monitor: {mt_err}'
+                    return False
+                self.last_error = ''
+                return True
+            self.session_data['jail_active'] = enforcer.enforcement_active
+            self.last_error = enforcer.last_error
             
         except Exception as e:
+            self.last_error = f'Focus blocking failed to start: {e}'
             print(f"Focus jail failed to start: {e}")
+        return False
+
+    def get_enforcer(self):
+        """Share one blocking owner with the manual controls and recovery flow."""
+        if self.jail_enforcer is None:
+            from .blocker import ProductivityEnforcer
+            self.jail_enforcer = ProductivityEnforcer(
+                data_dir=self.data_dir, config_path=self.config_path
+            )
+        return self.jail_enforcer
     
     def _stop_jail_mode(self):
         """Stop productivity jail mode"""
-        if self.session_data.get('jail_active') and hasattr(self, 'jail_enforcer'):
+        if self.session_data.get('jail_active') and self.jail_enforcer:
             try:
-                self.jail_enforcer.stop_enforcement()
+                if not self.jail_enforcer.stop_enforcement():
+                    self.last_error = self.jail_enforcer.last_error
+                    return False
                 self.session_data['jail_active'] = False
+                self.last_error = ''
                 print("Focus jail deactivated")
             except Exception as e:
+                self.last_error = f'Could not remove focus blocking: {e}'
                 print(f"Error stopping focus jail: {e}")
+                return False
+        return True
     
 
     
