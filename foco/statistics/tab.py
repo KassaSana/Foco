@@ -75,6 +75,21 @@ class StatisticsTab:
                 label, minutes, stats.get("total_productive", 1), color
             )
         self._render_metrics(stats["metrics"])
+        review = self.stats_calculator.calculate_daily_review(stats.get('date'))
+        panel = ttk.LabelFrame(self.stats_container, text="Daily review")
+        panel.pack(fill="x", pady=(10, 4))
+        ttk.Label(panel, text=f"Outcomes recorded: {len(review['outcomes'])}").pack(
+            anchor="w", padx=8, pady=(5, 2)
+        )
+        distractions = ", ".join(
+            f"{label} ({minutes:.1f}m)" for label, minutes in review['main_distractions']
+        ) or "None recorded"
+        ttk.Label(panel, text=f"Main distractions: {distractions}").pack(
+            anchor="w", padx=8, pady=2
+        )
+        ttk.Label(panel, text=f"Suggestion: {review['suggestion']}", wraplength=650).pack(
+            anchor="w", padx=8, pady=(2, 6)
+        )
 
     def _render_weekly_stats(self, stats):
         ttk.Label(

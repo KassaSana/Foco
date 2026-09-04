@@ -15,6 +15,34 @@ class StatsCalculator:
         result['metrics'] = self.calculate_productivity_metrics([day_data])
         return result
 
+    def calculate_daily_review(self, date_str=None):
+        """Summarize outcomes, distractions, and one suggestion for a day."""
+        day = self.data_logger.get_day_data(date_str)
+        outcomes = [
+            session for session in day.get('focus_sessions', [])
+            if session.get('outcome')
+        ]
+        distractions = {}
+        for session in day.get('sessions', []):
+            if session.get('is_pseudo_productive') or str(session.get('category', '')).lower() == 'unclassified':
+                label = session.get('window_title') or session.get('application') or 'Unknown'
+                distractions[label] = distractions.get(label, 0) + float(
+                    session.get('duration_minutes', 0) or 0
+                )
+        main_distractions = sorted(distractions.items(), key=lambda item: item[1], reverse=True)[:3]
+        if main_distractions:
+            suggestion = f"Set a shorter block for {main_distractions[0][0]} tomorrow."
+        elif outcomes and any(session.get('outcome') == 'Blocked' for session in outcomes):
+            suggestion = "Review the blocked session notes before starting the next focus block."
+        else:
+            suggestion = "Keep the next focus intention as specific as today's strongest session."
+        return {
+            'date': day.get('date'),
+            'outcomes': outcomes,
+            'main_distractions': main_distractions,
+            'suggestion': suggestion,
+        }
+
     def calculate_productivity_metrics(self, day_records):
         """Calculate behavior and focus metrics for any collection of days."""
         productive_minutes = 0

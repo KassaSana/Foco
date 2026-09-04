@@ -64,6 +64,21 @@ class TestProductivityMetrics(unittest.TestCase):
         metrics = self.calculator.calculate_daily_stats()['metrics']
         self.assertTrue(self.calculator.build_insights(metrics))
 
+    def test_daily_review_summarizes_distractions_and_outcomes(self):
+        self.logger.replace_activities([
+            {'label': 'Reddit', 'category': 'pseudo_productive', 'duration_minutes': 12},
+            {'label': 'Unknown app', 'category': 'Unclassified', 'duration_minutes': 4},
+        ])
+        self.logger.log_focus_session({
+            'intention': 'Write report', 'outcome': 'Blocked', 'note': 'Too tired',
+        })
+
+        review = self.calculator.calculate_daily_review()
+
+        self.assertEqual(len(review['outcomes']), 1)
+        self.assertEqual(review['main_distractions'][0], ('Reddit', 12.0))
+        self.assertIn('Reddit', review['suggestion'])
+
     def test_adjacent_productive_segments_form_one_work_block(self):
         day = {
             'daily_summary': {'total_productive': 20, 'pseudo_productive': 0},
