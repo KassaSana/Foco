@@ -59,7 +59,7 @@ def main():
     
     try:
         # Import and run the main application
-        from foco.main import FocoApp
+        from foco.app import FocoApp
         
         print("Launching Foco...")
         app = FocoApp()

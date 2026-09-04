@@ -39,20 +39,19 @@ python app_launcher.py
 ## Project layout
 
 ```text
-foco/                  Application package
-  main.py              Desktop composition root
-  dashboard.py         Tkinter interface
-  activity_monitor.py  Foreground and idle tracking
-  category_engine.py   Activity classification
-  data_logger.py       Local persistence
-  focus_manager.py     Focus-session lifecycle
-  productivity_enforcer.py
-                         Domain and process blocking
-  stats_calculator.py  Historical metrics
-scripts/               Executable packaging utility
-tests/                 Automated unit tests
-app_launcher.py        Elevated Windows entry point
-config.json            User-editable defaults
+foco/                     Application package
+  app.py                  Desktop composition root
+  config.py               Shared configuration loading and validation
+  storage.py              Shared local JSON persistence
+  activity_tracking/      Foreground tracking and classification
+  focus/                  Focus sessions, blocking, and Focus tab
+  activities/             Editable activity timeline tab
+  statistics/             Historical metrics and Statistics tab
+  settings/               Settings tab
+scripts/                  Executable packaging utility
+tests/                    Tests mirroring the feature folders
+app_launcher.py           Elevated Windows entry point
+config.json               User-editable defaults
 ```
 
 ## Using the application
@@ -88,4 +87,4 @@ The tests use temporary hosts and data files; they do not modify the system host
 
 ## Packaging
 
-Run `python -m scripts.setup_app` to build `dist/Foco.exe` with PyInstaller.
+Run `python -m scripts.build_executable` to build `dist/Foco.exe` with PyInstaller.

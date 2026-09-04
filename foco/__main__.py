@@ -1,10 +1,6 @@
 """Allow Foco to run with ``python -m foco``."""
 
-from .main import FocoApp
-
-
-def main():
-    FocoApp().run()
+from .app import main
 
 
 if __name__ == "__main__":

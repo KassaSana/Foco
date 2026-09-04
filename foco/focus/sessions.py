@@ -4,7 +4,7 @@ Manages 90min Deep Work and 25min Quick Focus modes
 """
 from datetime import datetime
 from enum import Enum
-from .config_manager import load_config
+from ..config import load_config
 
 class FocusMode(Enum):
     DEEP_WORK = "Deep Work"
@@ -192,7 +192,7 @@ class FocusManager:
     def _start_jail_mode(self):
         """Start productivity jail mode"""
         try:
-            from .productivity_enforcer import ProductivityEnforcer
+            from .blocker import ProductivityEnforcer
             
             self.jail_enforcer = ProductivityEnforcer()
             duration_hours = self.durations[self.current_mode] / 60

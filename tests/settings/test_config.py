@@ -3,10 +3,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from foco.category_engine import CategoryEngine
-from foco.config_manager import load_config, save_config
-from foco.focus_manager import FocusManager, FocusMode
-from foco.productivity_enforcer import ProductivityEnforcer
+from foco.activity_tracking.classifier import CategoryEngine
+from foco.config import load_config, save_config
+from foco.focus.blocker import ProductivityEnforcer
+from foco.focus.sessions import FocusManager, FocusMode
 
 
 class TestConfiguration(unittest.TestCase):

@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
-from foco.data_logger import DataLogger
-from foco.stats_calculator import StatsCalculator
+from foco.statistics.calculator import StatsCalculator
+from foco.storage import DataLogger
 
 
 class MutableClock:
